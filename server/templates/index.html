@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPD 墨水屏 - 图片管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+        }
+        .upload-area {
+            border: 2px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: white;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f8f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #f0f0ff;
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .file-list {
+            padding: 10px 0;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .file-item:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateX(5px);
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .file-icon {
+            font-size: 24px;
+            margin-right: 12px;
+            color: #667eea;
+        }
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+        .file-name {
+            font-weight: 500;
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+        .file-meta {
+            font-size: 12px;
+            color: #666;
+        }
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .image-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .preview-img {
+            max-width: 100%;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            padding: 8px;
+        }
+        .image-card .card-body {
+            padding: 10px;
+        }
+        .image-card .card-title {
+            font-size: 14px;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .image-card .card-text {
+            font-size: 12px;
+            color: #666;
+        }
+        .badge {
+            font-size: 10px;
+        }
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .stats-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stats-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .file-input {
+            display: none;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1060;
+        }
+        .preview-modal .modal-img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-display"></i>
+                EPD 墨水屏 - 图片管理系统
+            </a>
+            <div class="d-flex">
+                <button class="btn btn-light btn-sm me-2" onclick="refreshData()">
+                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                </button>
+                <a href="/api/images" target="_blank" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-code-square"></i> API
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <!-- 统计卡片 -->
+
+        <!-- 上传区域 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-cloud-upload"></i> 上传图片
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="uploadArea">
+                            <i class="bi bi-cloud-arrow-up" style="font-size: 48px; color: #667eea;"></i>
+                            <h5 class="mt-3">拖拽图片到此处或点击上传</h5>
+                            <p class="text-muted">支持 JPG, PNG, GIF, BMP 格式，最大 16MB</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="bi bi-folder-open"></i> 选择文件
+                            </button>
+                            <input type="file" id="fileInput" class="file-input" multiple
+                                   accept=".jpg,.jpeg,.png,.gif,.bmp">
+                        </div>
+                        <div class="progress mt-3" style="display: none;" id="uploadProgress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 双预览区域 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-image"></i> 原始图片预览
+                            <span class="badge bg-light text-dark ms-2" id="originalPreviewCount">0</span>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="originalPreview" class="image-grid">
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-file-earmark-image" style="font-size: 48px;"></i>
+                                <p class="mt-2">暂无原始图片</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-image"></i> BMP图片预览
+                            <span class="badge bg-light text-dark ms-2" id="bmpPreviewCount">0</span>
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div id="bmpPreview" class="image-grid">
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-image" style="font-size: 48px;"></i>
+                                <p class="mt-2">暂无BMP图片</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 待转换文件列表 -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-cloud-upload"></i> 待转换文件
+                            <span class="badge bg-light text-dark ms-2" id="uploadCount">0</span>
+                        </span>
+                        <div>
+                            <button class="btn btn-light btn-sm" onclick="loadUploads()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-header bg-light">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" id="selectAll" class="form-check-input me-2"
+                                   onchange="toggleSelectAll()">
+                            <label for="selectAll" class="form-check-label mb-0">全选</label>
+                            <span class="ms-3">
+                                <button class="btn btn-success btn-sm me-2" onclick="batchConvert()" disabled id="batchConvertBtn">
+                                    <i class="bi bi-arrow-right"></i> 批量转换 (<span id="selectedCount">0</span>)
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="batchDelete()" disabled id="batchDeleteBtn">
+                                    <i class="bi bi-trash"></i> 批量删除 (<span id="selectedCountDelete">0</span>)
+                                </button>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 40px;">选择</th>
+                                        <th>文件名</th>
+                                        <th>大小</th>
+                                        <th>修改时间</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="uploadTableBody">
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted">
+                                            <i class="bi bi-hourglass-split"></i> 加载中...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 原始图片列表和BMP图片列表 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-file-earmark-image"></i> 原始图片列表
+                            <span class="badge bg-light text-dark ms-2" id="originalListCount">0</span>
+                        </span>
+                        <div>
+                            <button class="btn btn-light btn-sm" onclick="loadOriginalList()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="originalList" class="file-list">
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-file-earmark-image" style="font-size: 32px;"></i>
+                                <p class="mt-2">暂无原始图片</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-image"></i> BMP图片列表
+                            <span class="badge bg-light text-dark ms-2" id="bmpListCount">0</span>
+                        </span>
+                        <div>
+                            <button class="btn btn-light btn-sm" onclick="loadBMPFiles()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="bmpList" class="file-list">
+                            <div class="text-center text-muted py-3">
+                                <i class="bi bi-image" style="font-size: 32px;"></i>
+                                <p class="mt-2">暂无BMP图片</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片预览模态框 -->
+    <div class="modal fade preview-modal" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewTitle"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="previewImage" class="preview-img" src="" alt="预览图片">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 转换进度模态框 -->
+    <div class="modal fade" id="conversionProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-arrow-repeat"></i> 转换进度
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div id="progressFilename" class="mb-3 fw-bold text-truncate"></div>
+                    <div class="progress mb-2" style="height: 25px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                            <span id="progressPercent">0%</span>
+                        </div>
+                    </div>
+                    <div id="progressMessage" class="text-muted small text-center">准备转换...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 通知 -->
+    <div class="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 全局变量
+        let images = [];
+        let uploads = [];
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeUploadArea();
+
+            // 初始加载所有数据
+            (async () => {
+                await loadImages();
+                await loadUploads();
+                await loadOriginals();
+                await loadOriginalList();
+                loadBMPFiles();
+            })();
+
+            // 每5秒自动刷新
+            setInterval(() => {
+                loadImages();
+                loadUploads();
+                loadOriginals();
+                loadOriginalList();
+                loadBMPFiles();
+            }, 5000);
+        });
+
+        // 初始化上传区域
+        function initializeUploadArea() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // 拖拽事件
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            // 文件选择事件
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+
+        // 处理文件上传
+        async function handleFiles(files) {
+            if (files.length === 0) return;
+
+            const progressBar = document.querySelector('#uploadProgress .progress-bar');
+            const progressContainer = document.getElementById('uploadProgress');
+
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showToast('success', result.message);
+                    } else {
+                        showToast('danger', result.error);
+                    }
+
+                    // 更新进度
+                    progressBar.style.width = `${((i + 1) / files.length) * 100}%`;
+                } catch (error) {
+                    showToast('danger', `上传失败: ${error.message}`);
+                }
+            }
+
+            // 隐藏进度条
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }, 1000);
+
+            // 刷新列表
+            setTimeout(() => {
+                loadImages();
+                loadUploads();
+                loadOriginals();
+            }, 500);
+        }
+
+        // 加载图片列表
+        async function loadImages() {
+            try {
+                console.log('loadImages: 开始调用API...');
+                const response = await fetch('/api/images');
+                console.log('loadImages: API响应状态:', response.status);
+                images = await response.json();
+                console.log('loadImages: 获取到', images.length, '个文件');
+                console.log('loadImages: 设置images变量');
+
+                renderBMPPreview();
+                console.log('loadImages: 调用renderBMPPreview完成');
+            } catch (error) {
+                console.error('loadImages: 加载图片失败:', error);
+            }
+        }
+
+        // 加载上传文件列表
+        async function loadUploads() {
+            try {
+                const response = await fetch('/api/uploads');
+                uploads = await response.json();
+
+                renderUploads();
+                updateUploadStats();
+            } catch (error) {
+                console.error('加载上传文件失败:', error);
+            }
+        }
+
+        // 加载原始图片列表（用于预览 - 显示uploads中的所有图片）
+        async function loadOriginals() {
+            try {
+                console.log('loadOriginals: 开始加载原始图片预览...');
+                // 获取uploads中的所有图片
+                const uploadsResponse = await fetch('/api/all-uploads');
+                const uploadsFiles = await uploadsResponse.json();
+                console.log('loadOriginals: 获取到', uploadsFiles.length, '个原始图片');
+
+                // 直接渲染预览
+                renderOriginalPreview(uploadsFiles);
+                updateOriginalPreviewCount();
+                console.log('loadOriginals: 渲染完成');
+            } catch (error) {
+                console.error('加载原始图片失败:', error);
+            }
+        }
+
+        // 渲染上传文件列表
+        function renderUploads() {
+            const tbody = document.getElementById('uploadTableBody');
+            const countBadge = document.getElementById('uploadCount');
+
+            countBadge.textContent = uploads.length;
+
+            if (uploads.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="bi bi-cloud-upload"></i> 暂无待转换文件
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = uploads.map((file, index) => `
+                <tr>
+                    <td>
+                        <input type="checkbox" class="form-check-input file-checkbox"
+                               value="${file.name}" onchange="updateBatchButtons()">
+                    </td>
+                    <td>
+                        <i class="bi bi-file-earmark-image text-primary"></i>
+                        ${file.name}
+                    </td>
+                    <td>${formatFileSize(file.size)}</td>
+                    <td>${file.modified}</td>
+                    <td>
+                        <button class="btn btn-success btn-sm me-1" onclick="convertFile('${file.name}')">
+                            <i class="bi bi-arrow-right"></i> 转换
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.name}')">
+                            <i class="bi bi-trash"></i> 删除
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 渲染原始图片预览
+        function renderOriginalPreview(files) {
+            const container = document.getElementById('originalPreview');
+            const countBadge = document.getElementById('originalPreviewCount');
+
+            countBadge.textContent = files.length;
+
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-file-earmark-image" style="font-size: 48px;"></i>
+                        <p class="mt-2">暂无原始图片</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 检查images是否存在，如果不存在则默认为空数组
+            const bmpNames = (images || []).map(img => {
+                return img.name.replace('.bmp', '');
+            });
+
+            // 所有原始图片都在uploads目录中
+            container.innerHTML = files.map(image => {
+                const imageSrc = `/uploads/${image.name}`;
+                const previewSrc = imageSrc;
+
+                // 检查是否存在对应的BMP文件
+                const imageNameWithoutExt = image.name.replace(/\.[^/.]+$/, "");
+                const hasBMP = bmpNames.includes(imageNameWithoutExt);
+
+                // 根据转换状态显示不同的badge
+                const badge = hasBMP
+                    ? '<span class="badge bg-success">已转换</span>'
+                    : '<span class="badge bg-warning">待转换</span>';
+
+                return `
+                    <div class="image-card">
+                        <img src="${imageSrc}" alt="${image.name}"
+                             onclick="previewImage('${previewSrc}', '${image.name}')"
+                             style="cursor: pointer;">
+                        <div class="card-body">
+                            <div class="card-title" title="${image.name}">
+                                ${image.name} ${badge}
+                            </div>
+                            <div class="card-text">
+                                <small class="text-muted">
+                                    <i class="bi bi-hdd"></i> ${formatFileSize(image.size)}
+                                </small><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-clock"></i> ${image.modified}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 预览图片
+        function previewImage(src, filename) {
+            document.getElementById('previewTitle').textContent = filename;
+            document.getElementById('previewImage').src = src;
+            new bootstrap.Modal(document.getElementById('previewModal')).show();
+        }
+
+        // 渲染BMP图片预览
+        function renderBMPPreview() {
+            const container = document.getElementById('bmpPreview');
+            const countBadge = document.getElementById('bmpPreviewCount');
+
+            countBadge.textContent = images.length;
+
+            if (images.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-image" style="font-size: 48px;"></i>
+                        <p class="mt-2">暂无BMP图片</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = images.map(image => `
+                <div class="image-card">
+                    <img src="/images/${image.name}" alt="${image.name}"
+                         onclick="previewImage('/images/${image.name}', '${image.name}')"
+                         style="cursor: pointer;">
+                    <div class="card-body">
+                        <div class="card-title" title="${image.name}">
+                            ${image.name}
+                        </div>
+                        <div class="card-text">
+                            <small class="text-muted">
+                                <i class="bi bi-hdd"></i> ${formatFileSize(image.size)}
+                            </small><br>
+                            <small class="text-muted">
+                                <i class="bi bi-clock"></i> ${image.modified}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 转换文件（支持进度显示）
+        async function convertFile(filename) {
+            try {
+                // 显示进度模态框
+                const progressModal = new bootstrap.Modal(document.getElementById('conversionProgressModal'));
+                const progressBar = document.getElementById('progressBar');
+                const progressPercent = document.getElementById('progressPercent');
+                const progressMessage = document.getElementById('progressMessage');
+                const progressFilename = document.getElementById('progressFilename');
+
+                progressFilename.textContent = filename;
+                progressBar.style.width = '0%';
+                progressBar.setAttribute('aria-valuenow', '0');
+                progressPercent.textContent = '0%';
+                progressMessage.textContent = '准备转换...';
+
+                progressModal.show();
+
+                // 启动转换请求
+                const convertPromise = fetch('/api/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                // 轮询进度直到完成
+                let progressCheckInterval;
+                const checkProgress = async () => {
+                    try {
+                        const response = await fetch(`/api/progress/${encodeURIComponent(filename)}`);
+                        const progress = await response.json();
+
+                        // 更新进度条
+                        progressBar.style.width = progress.progress + '%';
+                        progressBar.setAttribute('aria-valuenow', progress.progress);
+                        progressPercent.textContent = progress.progress + '%';
+
+                        // 更新消息
+                        progressMessage.textContent = progress.message;
+
+                        // 检查是否完成
+                        if (progress.status === 'completed') {
+                            clearInterval(progressCheckInterval);
+                            setTimeout(() => {
+                                progressModal.hide();
+                                showToast('success', `转换成功: ${progress.message}`);
+                                // 刷新所有数据
+                                loadImages();
+                                loadUploads();
+                                loadOriginals();
+                                loadOriginalList();
+                            }, 500);
+                        } else if (progress.status === 'error') {
+                            clearInterval(progressCheckInterval);
+                            setTimeout(() => {
+                                progressModal.hide();
+                                showToast('danger', `转换失败: ${progress.message}`);
+                            }, 500);
+                        }
+                    } catch (error) {
+                        console.error('查询进度失败:', error);
+                    }
+                };
+
+                // 每500ms查询一次进度
+                progressCheckInterval = setInterval(checkProgress, 500);
+
+                // 等待转换完成
+                const response = await convertPromise;
+                const result = await response.json();
+
+                if (!result.success) {
+                    clearInterval(progressCheckInterval);
+                    setTimeout(() => {
+                        progressModal.hide();
+                        showToast('danger', result.error);
+                    }, 500);
+                }
+            } catch (error) {
+                showToast('danger', `转换失败: ${error.message}`);
+            }
+        }
+
+        // 删除文件（删除待转换文件）
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除 ${filename} 吗？`)) return;
+
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('success', result.message);
+
+                    // 刷新所有数据
+                    loadImages();
+                    loadUploads();
+                } else {
+                    showToast('danger', result.error);
+                }
+            } catch (error) {
+                showToast('danger', `删除失败: ${error.message}`);
+            }
+        }
+
+        // 刷新数据
+        async function refreshData() {
+            showToast('info', '正在刷新...');
+            await loadImages();
+            await loadUploads();
+            await loadOriginals();  // 刷新原始图片预览
+            await loadOriginalList();  // 刷新原始图片列表
+            await loadBMPFiles();  // 刷新BMP图片列表
+            showToast('success', '刷新完成');
+        }
+
+        // ============= 批量操作函数 =============
+
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const fileCheckboxes = document.querySelectorAll('.file-checkbox');
+
+            fileCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+
+            updateBatchButtons();
+        }
+
+        // 更新批量按钮状态
+        function updateBatchButtons() {
+            const fileCheckboxes = document.querySelectorAll('.file-checkbox');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const batchConvertBtn = document.getElementById('batchConvertBtn');
+            const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+            const selectedCountSpan = document.getElementById('selectedCount');
+            const selectedCountDeleteSpan = document.getElementById('selectedCountDelete');
+
+            // 获取选中的文件数
+            const selectedCount = document.querySelectorAll('.file-checkbox:checked').length;
+
+            // 更新按钮状态
+            const isEnabled = selectedCount > 0;
+            batchConvertBtn.disabled = !isEnabled;
+            batchDeleteBtn.disabled = !isEnabled;
+
+            // 更新计数
+            selectedCountSpan.textContent = selectedCount;
+            selectedCountDeleteSpan.textContent = selectedCount;
+
+            // 更新全选复选框状态
+            if (selectedCount === 0) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = false;
+            } else if (selectedCount === fileCheckboxes.length) {
+                selectAllCheckbox.indeterminate = false;
+                selectAllCheckbox.checked = true;
+            } else {
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+
+        // 批量转换
+        async function batchConvert() {
+            const fileCheckboxes = document.querySelectorAll('.file-checkbox:checked');
+
+            if (fileCheckboxes.length === 0) {
+                showToast('warning', '请选择要转换的文件');
+                return;
+            }
+
+            const filenames = Array.from(fileCheckboxes).map(cb => cb.value);
+
+            try {
+                showToast('info', `开始批量转换 ${filenames.length} 个文件...`);
+
+                const response = await fetch('/api/batch_convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filenames })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('success', result.message);
+
+                    // 刷新数据
+                    loadImages();
+                    loadUploads();
+                    loadOriginals();
+                    loadOriginalList();
+
+                    // 清除选择
+                    document.getElementById('selectAll').checked = false;
+                    updateBatchButtons();
+                } else {
+                    showToast('danger', result.error);
+                }
+            } catch (error) {
+                showToast('danger', `批量转换失败: ${error.message}`);
+            }
+        }
+
+        // 批量删除
+        async function batchDelete() {
+            const fileCheckboxes = document.querySelectorAll('.file-checkbox:checked');
+
+            if (fileCheckboxes.length === 0) {
+                showToast('warning', '请选择要删除的文件');
+                return;
+            }
+
+            const filenames = Array.from(fileCheckboxes).map(cb => cb.value);
+
+            if (!confirm(`确定要删除选中的 ${filenames.length} 个文件吗？`)) {
+                return;
+            }
+
+            try {
+                showToast('info', `开始批量删除 ${filenames.length} 个文件...`);
+
+                const response = await fetch('/api/batch_delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filenames })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('success', result.message);
+
+                    // 刷新数据
+                    loadImages();
+                    loadUploads();
+                    loadOriginals();
+                    loadOriginalList();
+
+                    // 清除选择
+                    document.getElementById('selectAll').checked = false;
+                    updateBatchButtons();
+                } else {
+                    showToast('danger', result.error);
+                }
+            } catch (error) {
+                showToast('danger', `批量删除失败: ${error.message}`);
+            }
+        }
+
+        // 更新统计
+        function updateImageStats() {
+            const element = document.getElementById('totalImages');
+            if (element) {
+                element.textContent = images.length;
+            }
+        }
+
+        function updateUploadStats() {
+            const element = document.getElementById('totalUploads');
+            if (element) {
+                element.textContent = uploads.length;
+            }
+        }
+
+        function updateOriginalPreviewCount() {
+            // 从uploads列表获取计数
+            document.getElementById('originalPreviewCount').textContent = uploads.length;
+        }
+
+        // 显示Toast通知
+        function showToast(type, message) {
+            const toastContainer = document.querySelector('.toast-container');
+            const toastId = 'toast-' + Date.now();
+
+            const toast = document.createElement('div');
+            toast.innerHTML = `
+                <div id="${toastId}" class="toast" role="alert">
+                    <div class="toast-header">
+                        <i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'danger' ? 'exclamation-triangle-fill' : 'info-circle-fill'}
+                           text-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'primary'} me-2"></i>
+                        <strong class="me-auto">${type === 'success' ? '成功' : type === 'danger' ? '错误' : '提示'}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                </div>
+            `;
+
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(document.getElementById(toastId));
+            bsToast.show();
+
+            // 自动移除
+            document.getElementById(toastId).addEventListener('hidden.bs.toast', function() {
+                this.parentElement.remove();
+            });
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // ============= 原始文件和BMP文件列表函数 =============
+
+        // 加载原始图片列表（从uploads目录，用于底部的列表）
+        async function loadOriginalList() {
+            try {
+                const response = await fetch('/api/all-uploads');
+                const files = await response.json();
+
+                renderOriginalList(files);
+                updateOriginalListCount(files.length);
+            } catch (error) {
+                console.error('加载原始图片列表失败:', error);
+            }
+        }
+
+        // 加载BMP文件列表（复用 loadImages 的数据）
+        function loadBMPFiles() {
+            // 直接使用 images 变量中的数据，避免重复调用 API
+            renderBMPFiles();
+            updateBMPFilesStats();
+        }
+
+        // 渲染原始图片列表（从uploads目录）
+        function renderOriginalList(files) {
+            const container = document.getElementById('originalList');
+            const countBadge = document.getElementById('originalListCount');
+
+            countBadge.textContent = files.length;
+
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-file-earmark-image" style="font-size: 32px;"></i>
+                        <p class="mt-2">暂无原始图片</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 获取uploads中的文件列表（用于判断是否已转换）
+            const uploadFilenames = uploads.map(f => f.name);
+
+            container.innerHTML = files.map(file => {
+                // 判断文件是否已转换（通过待转换列表判断）
+                const isConverted = !uploadFilenames.includes(file.name);
+                const badge = isConverted ? '<span class="badge bg-success">已转换</span>' : '<span class="badge bg-warning">待转换</span>';
+
+                return `
+                    <div class="file-item">
+                        <div class="file-info">
+                            <div class="file-icon">
+                                <i class="bi bi-file-earmark-image"></i>
+                            </div>
+                            <div class="file-details">
+                                <div class="file-name" title="${file.name}">
+                                    ${file.name} ${badge}
+                                </div>
+                                <div class="file-meta">
+                                    <i class="bi bi-hdd"></i> ${formatFileSize(file.size)} |
+                                    <i class="bi bi-clock"></i> ${file.modified}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-info btn-sm me-1" onclick="previewImage('/uploads/${file.name}', '${file.name}')">
+                                <i class="bi bi-eye"></i> 预览
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteUploadFile('${file.name}')">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 渲染原始文件列表
+        // 渲染BMP文件列表
+        function renderBMPFiles() {
+            const container = document.getElementById('bmpList');
+            const countBadge = document.getElementById('bmpListCount');
+
+            countBadge.textContent = images.length;
+
+            if (images.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-image" style="font-size: 32px;"></i>
+                        <p class="mt-2">暂无BMP图片</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = images.map(file => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <div class="file-icon">
+                            <i class="bi bi-image"></i>
+                        </div>
+                        <div class="file-details">
+                            <div class="file-name" title="${file.name}">
+                                ${file.name}
+                            </div>
+                            <div class="file-meta">
+                                <i class="bi bi-hdd"></i> ${formatFileSize(file.size)} |
+                                <i class="bi bi-clock"></i> ${file.modified}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-info btn-sm me-1" onclick="previewImage('/images/${file.name}', '${file.name}')">
+                            <i class="bi bi-eye"></i> 预览
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteBMPFile('${file.name}')">
+                            <i class="bi bi-trash"></i> 删除
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 删除BMP文件
+        async function deleteBMPFile(filename) {
+            console.log('deleteBMPFile called with:', filename);
+
+            // 显示确认对话框
+            const confirmed = confirm(`确定要删除BMP文件 ${filename} 吗？`);
+            console.log('User confirmed:', confirmed);
+
+            if (!confirmed) {
+                console.log('User cancelled deletion');
+                showToast('info', '已取消删除操作');
+                return;
+            }
+
+            showToast('info', '正在删除文件...');
+
+            try {
+                console.log('Sending DELETE request to /api/delete-bmp');
+
+                const response = await fetch('/api/delete-bmp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('Response data:', result);
+
+                if (result.success) {
+                    showToast('success', result.message);
+                    console.log('Deletion successful, updating UI');
+
+                    // 从列表中移除已删除的文件（使用images变量）
+                    images = images.filter(item => item.name !== filename);
+
+                    // 重新渲染
+                    renderBMPPreview();
+                    renderBMPFiles();
+
+                    console.log('UI updated successfully');
+                } else {
+                    console.error('API returned error:', result.error);
+                    showToast('danger', `删除失败: ${result.error}`);
+                }
+            } catch (error) {
+                console.error('Delete operation failed:', error);
+                showToast('danger', `删除失败: ${error.message}`);
+            }
+        }
+
+        // 删除uploads中的文件
+        async function deleteUploadFile(filename) {
+            if (!confirm(`确定要删除原始文件 ${filename} 吗？`)) {
+                return;
+            }
+
+            showToast('info', '正在删除文件...');
+
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('success', result.message);
+
+                    // 刷新所有相关列表
+                    loadUploads();
+                    loadOriginals();
+                    loadOriginalList();
+                    loadImages();
+                } else {
+                    showToast('danger', result.error);
+                }
+            } catch (error) {
+                showToast('danger', `删除失败: ${error.message}`);
+            }
+        }
+
+        // 更新统计信息
+        function updateOriginalFilesStats() {
+            // 统计信息已在renderOriginalList中更新
+        }
+
+        function updateBMPFilesStats() {
+            // 统计信息已在renderBMPFiles中更新
+        }
+
+        function updateOriginalListCount(count) {
+            document.getElementById('originalListCount').textContent = count;
+        }
+    </script>
+</body>
+</html>
