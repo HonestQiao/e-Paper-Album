@@ -42,7 +42,7 @@ endforeach()
 
 # APP INC - Set the header file directory
 set(APP_INC
-    ${APP_PATH}/examples
+    ${APP_PATH}/src
     ${APP_PATH}/lib/Config
     ${APP_PATH}/lib/e-Paper
     ${APP_PATH}/lib/Fonts
