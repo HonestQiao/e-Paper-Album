@@ -60,6 +60,8 @@ python manage.py --mode web
 - 管理图片列表
 - 实时查看转换进度
 
+![WEB管理界面](server/static/img/web.png)
+
 ### 2. 硬件端部署（T5 开发板）
 
 #### 编译固件
@@ -83,6 +85,9 @@ tos monitor
 - 将固件烧录到 T5 开发板
 - 重启设备
 - 查看串口日志确认连接状态
+
+#### 显示效果
+![WEB管理界面](server/static/img/device.jpg)
 
 ## 💡 功能特性
 
