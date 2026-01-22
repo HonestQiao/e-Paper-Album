@@ -1,0 +1,26 @@
+# EPD 墨水屏图片管理系统 - Python依赖包
+# Image Converter Requirements for E-Paper Display System
+
+# Web框架 - Flask
+Flask>=2.3.0
+
+# 图片处理库 - Pillow
+Pillow>=10.0.0
+
+# Werkzeug (Flask依赖，通常会自动安装)
+# werkzeug>=2.3.0
+
+# Jinja2 (Flask依赖，通常会自动安装)
+# jinja2>=3.1.0
+
+# Click (Flask依赖，通常会自动安装)
+# click>=8.1.0
+
+# MarkupSafe (Jinja2依赖，通常会自动安装)
+# markupsafe>=2.1.0
+
+# ItsDangerous (Flask依赖，通常会自动安装)
+# itsdangerous>=2.1.0
+
+# Blinker (Werkzeug依赖，通常会自动安装)
+# blinker>=1.6.0
