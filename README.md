@@ -87,7 +87,8 @@ tos monitor
 - 查看串口日志确认连接状态
 
 #### 显示效果
-![WEB管理界面](server/static/img/device.jpg)
+![虎](server/static/img/tiger.jpg)server/static/img/tiger.jpg
+![设备显示效果](server/static/img/device.jpg)
 
 ## 💡 功能特性
 
@@ -189,5 +190,8 @@ python epd_socket_client.py get_c
 
 如有问题，请查看：
 - `server/README.md` - 服务端详细文档
-- `src/EPD_Test.h` - 硬件端测试接口
+- `src/EPD_Config.h` - 硬件端测试接口
 - 控制台日志输出
+
+## 相关链接
+- [基于涂鸦T5的智能生肖相册墨水屏 - 嘉立创开源硬件](https://oshwhub.com/honestqiao/tuya-e-paper-album)
