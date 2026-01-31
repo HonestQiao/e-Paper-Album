@@ -194,4 +194,4 @@ python epd_socket_client.py get_c
 - 控制台日志输出
 
 ## 相关链接
-- [基于涂鸦T5的智能生肖相册墨水屏 - 嘉立创开源硬件](https://oshwhub.com/honestqiao/tuya-e-paper-album)
+- [基于涂鸦T5的智能生肖相册墨水屏 - 嘉立创开源硬件](https://oshwhub.com/article/tuya-e-paper-album)
