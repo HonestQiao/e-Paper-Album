@@ -10,7 +10,7 @@
  * |                2025-01-21  :   First Version
  * |                2025-02-08  :   Access Tuya IoT platform, support App network configuration
  ******************************************************************************/
-#include "EPD_Test.h"
+#include "EPD_Album.h"
 #include "EPD_4in0e.h"
 #include "tal_api.h"
 #include "tal_network.h"
@@ -28,6 +28,8 @@
 #define RECV_BUFFER_SIZE   1024
 #define LOOP_INTERVAL_MS   180000 // 循环间隔
 #define IMAGE_BUFFER_SIZE  120000 // 400x600 屏幕 6 色格式大小 (400*600/2)
+#define RLE_LINE_BUFFER_SIZE  512   // RLE 单行解码缓冲区大小
+#define RLE_RECV_BUFFER_SIZE 4096   // RLE 接收缓冲区大小
 
 /* 默认服务器地址字节（如果没有从 App 设置） */
 #define DEFAULT_SERVER_IP_BYTES  {192, 168, 1, 15}
@@ -49,6 +51,10 @@ extern void user_tuya_yield(void);
 
 static volatile bool g_socket_connected = false;
 
+/* RLE 解码静态缓冲区（避免栈溢出） */
+static uint8_t g_rle_buffer[RLE_RECV_BUFFER_SIZE];
+static uint8_t g_line_buffer[RLE_LINE_BUFFER_SIZE];
+
 /***********************************************************
  *                    函数声明
  ***********************************************************/
@@ -57,6 +63,7 @@ static int  socket_recv_json_response(char *response, int resp_size);
 static int  socket_get_image_data(uint8_t *data, uint32_t *data_size);
 static int  net_wait_connected(void);
 static void print_hex_dump(const uint8_t *data, uint32_t len, uint32_t max_lines);
+static uint32_t rle_decode_line(const uint8_t *rle_data, uint32_t rle_len, uint8_t *output, uint32_t out_max);
 
 /***********************************************************
  *                    函数定义
@@ -238,10 +245,10 @@ static void display_network_result(int status, const char *message)
 }
 
 /**
- * @brief EPD 网络测试函数
+ * @brief EPD Album 主函数
  * @note 使用 netmgr 进行网络管理，通过 socket 循环获取数据: update -> info -> get_c
  */
-int EPD_test_net(void)
+int EPD_Album_main(void)
 {
     char response[RECV_BUFFER_SIZE];
     uint8_t *image_buffer = NULL;
@@ -306,7 +313,7 @@ int EPD_test_net(void)
 
             PR_DEBUG("Image index: %d, total: %d", current_index, total);
         }
-
+#if 0
         // ========== 第二步: 发送 info 命令 ==========
         PR_DEBUG("Step 2: Sending 'info' command...");
         if (socket_send_command("info", response, sizeof(response)) != 0) {
@@ -360,8 +367,8 @@ int EPD_test_net(void)
             PR_INFO("    Filename: %s", filename);
             PR_INFO("==========================================");
         }
-
-        // ========== 第三步: 发送 get_c 命令获取 C 数组数据 ==========
+#endif
+        // ========== 第三步: 发送 get_c 命令获取打包数据（每像素4位） ==========
         PR_DEBUG("Step 3: Sending 'get_c' command...");
 
         // 分配图片缓冲区
@@ -424,30 +431,41 @@ int EPD_test_net(void)
 
         PR_INFO("Image displayed successfully");
 
-        // 等待显示刷新完成 (30秒)
-        PR_DEBUG("Waiting 30s for display refresh to complete...");
-        // 等待时处理 SDK 事件（防止长时间阻塞导致 SDK 内部状态异常）
-        uint32_t waited_display = 0;
-        while (waited_display < 30000) {
-            user_tuya_yield();
-            tal_system_sleep(100);
-            waited_display += 100;
-        }
+        // 注意：EPD_4IN0E_Display_Fast() 内部已经通过 EPD_BUSY_PIN 等待刷新完成
+        // 无需额外等待！只需要短暂延时让屏幕完全稳定
+        PR_INFO("Waiting briefly for display to stabilize...");
+        tal_system_sleep(200);
+
+        // 短暂处理 SDK 事件
+        user_tuya_yield();
+
+        // 等待19秒确保屏幕刷新完成
+        PR_INFO("Waiting 19s for display refresh to complete...");
+        tal_system_sleep(19000);
 
         // 进入睡眠
-        PR_INFO("Enter Sleep mode");
+        PR_INFO("Calling EPD_4IN0E_Sleep()...");
         EPD_4IN0E_Sleep();
-        /* 处理SDK事件，防止500ms阻塞导致问题 */
+        PR_INFO("EPD_4IN0E_Sleep() completed");
+
+        // 处理SDK事件
+        PR_INFO("Processing SDK events (500ms)...");
         user_tuya_yield();
         tal_system_sleep(500);
+
+        // 关闭模块
+        PR_INFO("Calling DEV_Module_Exit()...");
         DEV_Module_Exit();
+        PR_INFO("DEV_Module_Exit() completed");
 
         // 释放内存
+        PR_INFO("Freeing image buffer...");
         free(image_buffer);
         image_buffer = NULL;
+        PR_INFO("Image buffer freed");
 
         // ========== 等待下一次循环 ==========
-        PR_DEBUG("Waiting %d ms before next update...", LOOP_INTERVAL_MS);
+        PR_INFO("========== Waiting %d ms for next cycle (Loop #%d) ==========", LOOP_INTERVAL_MS, ++loop_count);
 
         // 等待时检查是否有来自 App 的刷新触发，同时处理 SDK 事件
         uint32_t waited = 0;
@@ -461,6 +479,10 @@ int EPD_test_net(void)
             user_tuya_yield();
             tal_system_sleep(1000);
             waited += 1000;
+            // 每30秒输出一次等待进度
+            if (waited % 30000 == 0) {
+                PR_INFO("Waited %d ms, continuing...", waited);
+            }
         }
     }
 
@@ -617,9 +639,14 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
 
     // 接收图片数据
     received = 0;
+    uint32_t yield_counter = 0;  // 计数器，减少 user_tuya_yield() 调用频率
     while (received < image_size) {
-        // 每接收一部分数据就处理SDK事件，防止事件堆积
-        user_tuya_yield();
+        // 每接收约 40KB 数据才处理一次 SDK 事件，提高传输效率
+        // 原来每次循环（约 4KB）都调用，导致云端响应阻塞时传输变慢
+        if (++yield_counter >= 10) {
+            user_tuya_yield();
+            yield_counter = 0;
+        }
 
         uint32_t to_recv = image_size - received;
         if (to_recv > 4096) {
@@ -644,6 +671,34 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
     tal_net_close(fd);
 
     return 0;
+}
+
+/**
+ * @brief RLE 解码单行数据
+ * @param rle_data RLE 编码数据
+ * @param rle_len RLE 数据长度
+ * @param output 输出缓冲区
+ * @param out_max 输出缓冲区最大长度
+ * @return 解码后的数据长度
+ */
+static uint32_t rle_decode_line(const uint8_t *rle_data, uint32_t rle_len, uint8_t *output, uint32_t out_max)
+{
+    uint32_t i = 0;      // RLE 数据索引
+    uint32_t out_pos = 0; // 输出位置
+
+    while (i < rle_len && out_pos < out_max) {
+        uint8_t count = rle_data[i++];
+        uint8_t value = rle_data[i++];
+
+        // 展开运行长度编码
+        if (out_pos + count > out_max) {
+            count = out_max - out_pos;
+        }
+        memset(output + out_pos, value, count);
+        out_pos += count;
+    }
+
+    return out_pos;
 }
 
 /**

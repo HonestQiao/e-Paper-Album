@@ -39,5 +39,5 @@
 #include <stdlib.h> // malloc() free()
 
 int EPD_test(void);
-int EPD_test_net(void);
+int EPD_Album_main(void);
 #endif

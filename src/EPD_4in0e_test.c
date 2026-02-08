@@ -28,7 +28,7 @@
 # THE SOFTWARE.
 #
 ******************************************************************************/
-#include "EPD_Test.h"
+#include "EPD_Album.h"
 #include "EPD_4in0e.h"
 #include "tal_api.h"
 #include "tkl_system.h"

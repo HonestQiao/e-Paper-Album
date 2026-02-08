@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 #include <signal.h>
-#include "EPD_Test.h"
+#include "EPD_Album.h"
 #include "tuya_config.h"
 #include "tuya_iot.h"
 #include "tuya_iot_dp.h"
@@ -26,6 +26,8 @@ tuya_iot_client_t g_client;
 volatile bool g_wifi_connected = false;
 volatile bool g_tuya_mqtt_connected = false;
 volatile bool g_refresh_trigger = false;  // Trigger from Tuya App
+volatile bool g_timestamp_synced = false;  // Timestamp sync completed flag
+volatile bool g_first_epd_run_done = false;  // First EPD_Album_main() completed flag
 
 /* Server IP - pending (received from App, not confirmed) */
 static uint8_t g_server_ip_pending[4] = {192, 168, 1, 15};
@@ -113,6 +115,8 @@ void user_event_handler_on(tuya_iot_client_t *client, tuya_event_msg_t *event)
     case TUYA_EVENT_TIMESTAMP_SYNC:
         PR_INFO("Sync timestamp:%d", event->value.asInteger);
         tal_time_set_posix(event->value.asInteger, 1);
+        g_timestamp_synced = true;
+        PR_INFO("Timestamp sync completed, flag set for EPD_Album_main()");
         break;
 
     case TUYA_EVENT_RESET:
@@ -379,19 +383,41 @@ static void user_main(void)
             tal_system_sleep(100);
             waited += 100;
         }
-        PR_INFO("Event processing complete, proceeding to EPD_test_net()...");
+        PR_INFO("Event processing complete, proceeding to EPD_Album_main()...");
     }
 
-    /* Run main e-Paper test function */
-    PR_INFO("Starting EPD_test_net()...");
-    EPD_test_net();
-    PR_INFO("EPD_test_net() returned - continuing to process SDK events...");
+    /* Run main e-Paper test function (first run) */
+    if (!g_first_epd_run_done) {
+        PR_INFO("Starting EPD_Album_main() (first run)...");
+        EPD_Album_main();
+        g_first_epd_run_done = true;
+        PR_INFO("EPD_Album_main() first run complete");
+    } else {
+        PR_INFO("Skipping EPD_Album_main() - already completed");
+    }
 
     /* IMPORTANT: Continue processing SDK events forever
      * This is critical for MQTT keepalive and App communication
      */
     for (;;) {
         user_tuya_yield();
+
+        /* Check if timestamp sync completed and EPD_Album_main() hasn't run yet */
+        if (g_timestamp_synced && !g_first_epd_run_done) {
+            PR_INFO("Timestamp sync detected after initial window - running EPD_Album_main()...");
+            EPD_Album_main();
+            g_first_epd_run_done = true;
+            PR_INFO("EPD_Album_main() completed after timestamp sync");
+        }
+
+        /* Check for App refresh trigger */
+        if (g_refresh_trigger) {
+            PR_INFO("Refresh trigger detected - running EPD_Album_main()...");
+            EPD_Album_main();
+            g_refresh_trigger = false;
+            PR_INFO("EPD_Album_main() completed after refresh trigger");
+        }
+
         tal_system_sleep(100);
     }
 }

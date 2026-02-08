@@ -26,7 +26,7 @@
 # SOFTWARE.
 #
 ******************************************************************************/
-#include "EPD_Test.h"
+#include "EPD_Album.h"
 #include "ImageData.h"
 #include "EPD_4in0e.h"
 
