@@ -38,7 +38,9 @@ import datetime
 import json
 import os
 import struct
+import logging
 from typing import Optional, List, Dict
+from logging.handlers import RotatingFileHandler
 import time
 
 # 配置
@@ -49,11 +51,66 @@ BUFFER_SIZE = 8192
 FILE_CHECK_INTERVAL = 5  # 检查文件变化的时间间隔（秒）
 FILE_CHANGE_DEBOUNCE = 5  # 文件变化防抖动时间（秒）
 
+# 全局日志配置
+_log_file = './server.log'  # 默认日志文件路径
+_logger = None
+
+def set_logging_config(log_file=None):
+    """配置日志"""
+    global _log_file, _logger
+
+    # 更新日志文件路径
+    if log_file:
+        _log_file = log_file
+
+    # 创建日志记录器
+    _logger = logging.getLogger('SOCKET')
+    _logger.setLevel(logging.DEBUG)
+
+    # 移除旧的处理器，确保使用新的日志文件路径
+    if _logger.handlers:
+        for handler in _logger.handlers[:]:
+            _logger.removeHandler(handler)
+
+    # 创建格式
+    console_formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)-8s] [SOCKET] %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    file_formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)-8s] [SOCKET] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    # 控制台处理器
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(console_formatter)
+    _logger.addHandler(console_handler)
+
+    # 文件处理器（带轮转，10MB）
+    try:
+        log_dir = os.path.dirname(_log_file) if os.path.dirname(_log_file) else '.'
+        os.makedirs(log_dir, exist_ok=True)
+        file_handler = RotatingFileHandler(
+            _log_file,
+            maxBytes=10*1024*1024,
+            backupCount=5,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(file_formatter)
+        _logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"[WARNING] Cannot create log file: {e}")
 
 def log_message(message: str, level: str = "INFO") -> None:
     """打印日志消息"""
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [{level}] {message}")
+    if _logger:
+        getattr(_logger, level.lower())(message)
+    else:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] [{level}] [SOCKET] {message}")
 
 
 def scan_bmp_images(image_dir: str) -> List[str]:
@@ -465,7 +522,10 @@ class EPDSocketServer:
 
     def handle_client(self, client_socket: socket.socket, client_addr: tuple) -> None:
         """处理客户端连接"""
-        log_message(f"Client connected: {client_addr[0]}:{client_addr[1]}")
+        log_message(f"[CLIENT] === 客户端连接 ===")
+        log_message(f"[CLIENT] 地址: {client_addr[0]}:{client_addr[1]}")
+        log_message(f"[CLIENT] 时间: {datetime.datetime.now().isoformat()}")
+        log_message(f"[CLIENT] 当前图片索引: {self.current_index}/{len(self.image_list) if self.image_list else 0}")
 
         try:
             # 设置超时
@@ -476,28 +536,32 @@ class EPDSocketServer:
                 try:
                     data = client_socket.recv(BUFFER_SIZE)
                     if not data:
-                        log_message(f"Client disconnected: {client_addr[0]}:{client_addr[1]}")
+                        log_message(f"[CLIENT] 客户端断开连接: {client_addr[0]}:{client_addr[1]}")
                         break
 
                     # 解码命令
                     command = data.decode('utf-8').strip()
-                    log_message(f"Received command: {command} from {client_addr[0]}:{client_addr[1]}")
+                    log_message(f"[CLIENT] 收到命令: '{command}' 来自 {client_addr[0]}:{client_addr[1]}")
+                    log_message(f"[CLIENT] 命令长度: {len(command)} 字节")
 
                     # 处理命令
                     command_lower = command.lower()
 
                     # get 命令 - 发送当前图片二进制数据（不推进索引）
                     if command_lower == "get":
+                        log_message(f"[CLIENT] 执行 get 命令")
                         self.send_image_data(client_socket)
                         continue
 
                     # get_c 命令 - 发送当前图片的 C 数组二进制数据（不推进索引）
                     if command_lower == "get_c":
+                        log_message(f"[CLIENT] 执行 get_c 命令")
                         self.send_c_array_data(client_socket)
                         continue
 
                     # info 命令 - 获取当前图片信息（不推进索引）
                     if command_lower == "info":
+                        log_message(f"[CLIENT] 执行 info 命令")
                         image_info = self.get_current_image_info()
                         if image_info:
                             response = json.dumps({
@@ -512,27 +576,29 @@ class EPDSocketServer:
                                 "data": {}
                             }, ensure_ascii=False)
                         client_socket.sendall(response.encode('utf-8'))
-                        log_message(f"Sent response to {client_addr[0]}:{client_addr[1]}")
+                        log_message(f"[CLIENT] 发送响应到 {client_addr[0]}:{client_addr[1]}")
                         continue
 
                     # 其他命令 - 返回 JSON 响应
+                    log_message(f"[CLIENT] 执行命令: {command}")
                     response = self.process_command(command)
                     client_socket.sendall(response.encode('utf-8'))
-                    log_message(f"Sent response to {client_addr[0]}:{client_addr[1]}")
+                    log_message(f"[CLIENT] 发送响应到 {client_addr[0]}:{client_addr[1]}")
 
                 except socket.timeout:
-                    log_message(f"Client timeout: {client_addr[0]}:{client_addr[1]}")
+                    log_message(f"[CLIENT] 客户端超时: {client_addr[0]}:{client_addr[1]}")
                     break
 
         except Exception as e:
-            log_message(f"Error handling client: {e}", "ERROR")
+            log_message(f"[CLIENT] 处理客户端异常: {e}", "ERROR")
 
         finally:
             try:
                 client_socket.close()
             except Exception:
                 pass
-            log_message(f"Connection closed: {client_addr[0]}:{client_addr[1]}")
+            log_message(f"[CLIENT] 连接已关闭: {client_addr[0]}:{client_addr[1]}")
+            log_message(f"[CLIENT] === 客户端会话结束 ===")
 
     def process_command(self, command: str) -> str:
         """
@@ -804,11 +870,21 @@ def main():
         help="启用详细输出"
     )
 
+    parser.add_argument(
+        "--log-file",
+        default='./server.log',
+        help='日志文件路径 (默认: ./server.log)'
+    )
+
     args = parser.parse_args()
 
-    if args.verbose:
-        log_message(f"Server configuration: {args.host}:{args.port}")
-        log_message(f"Image directory: {args.image_dir}")
+    # 设置日志配置
+    set_logging_config(args.log_file)
+
+    log_message(f"启动 Socket 服务器")
+    log_message(f"监听地址: {args.host}:{args.port}")
+    log_message(f"图片目录: {args.image_dir}")
+    log_message(f"日志文件: {args.log_file}")
 
     # 创建并运行服务器
     server = EPDSocketServer(host=args.host, port=args.port, image_dir=args.image_dir)

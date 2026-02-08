@@ -28,7 +28,9 @@ import os
 import sys
 import json
 import argparse
+import logging
 from datetime import datetime
+from logging.handlers import RotatingFileHandler
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, send_from_directory
 from PIL import Image
@@ -86,10 +88,63 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def log_message(message):
+# 全局日志配置
+_log_file = './server.log'
+_logger = None
+
+def set_logging_config(log_file=None):
+    """配置日志"""
+    global _log_file, _logger
+
+    if log_file:
+        _log_file = log_file
+
+    # 创建日志记录器
+    _logger = logging.getLogger('WEB')
+    _logger.setLevel(logging.DEBUG)
+
+    # 避免重复添加处理器
+    if _logger.handlers:
+        return
+
+    # 创建格式
+    console_formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)-8s] [WEB] %(message)s',
+        datefmt='%H:%M:%S'
+    )
+    file_formatter = logging.Formatter(
+        '[%(asctime)s] [%(levelname)-8s] [WEB] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+
+    # 控制台处理器
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(console_formatter)
+    _logger.addHandler(console_handler)
+
+    # 文件处理器（带轮转，10MB）
+    try:
+        os.makedirs(os.path.dirname(_log_file) if os.path.dirname(_log_file) else '.', exist_ok=True)
+        file_handler = RotatingFileHandler(
+            _log_file,
+            maxBytes=10*1024*1024,
+            backupCount=5,
+            encoding='utf-8'
+        )
+        file_handler.setLevel(logging.DEBUG)
+        file_handler.setFormatter(file_formatter)
+        _logger.addHandler(file_handler)
+    except Exception as e:
+        print(f"[WARNING] Cannot create log file: {e}")
+
+def log_message(message, level='INFO'):
     """打印日志消息"""
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] [WEB] {message}")
+    if _logger:
+        getattr(_logger, level.lower())(message)
+    else:
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] [WEB] [{level}] {message}")
 
 
 def prepare_image(input_path, output_path, rotation=0, target_width=400, target_height=600):
@@ -727,10 +782,15 @@ def main():
     parser.add_argument('--host', default=DEFAULT_HOST, help='监听地址')
     parser.add_argument('--port', type=int, default=DEFAULT_PORT, help='监听端口')
     parser.add_argument('--image-dir', default=os.environ.get('IMAGE_DIR', DIST_FOLDER), help='图片目录')
+    parser.add_argument('--log-file', default=os.environ.get('LOG_FILE', './server.log'), help='日志文件路径')
     args = parser.parse_args()
 
     # 优先使用环境变量中的设置
     image_dir = os.environ.get('IMAGE_DIR', args.image_dir)
+
+    # 设置日志配置
+    log_file = os.environ.get('LOG_FILE', args.log_file)
+    set_logging_config(log_file)
 
     # 设置图片目录
     set_image_dir(image_dir)
@@ -740,6 +800,7 @@ def main():
     log_message(f"上传目录: {UPLOAD_FOLDER}")
     log_message(f"输出目录: {get_image_dir()}")
     log_message(f"访问地址: http://{args.host}:{args.port}")
+    log_message(f"日志文件: {log_file}")
 
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
 
