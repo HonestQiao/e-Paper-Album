@@ -1,0 +1,5 @@
+# e-Paper Album Server Python Dependencies
+# 安装命令: pip install -r requirements.txt
+
+flask>=2.0.0
+pillow>=9.0.0
