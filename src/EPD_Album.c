@@ -1,113 +1,116 @@
 /*****************************************************************************
- * | File      	:	EPD_test_net.c
- * | Author      :   Tuya Developer
- * | Function    :   e-Paper network test Demo (WiFi + Socket)
- * | Info        :   Connect to WiFi and send commands via socket
+ * | File       :  EPD_Album.c
+ * | Author     :   HonestQiao
+ * | Function   :   e-Paper Smart Album - Tuya IoT + Network Mode
+ * | Info       :   Connect to WiFi, Tuya Cloud for App control, socket server
+ *                 for remote image data, display on 4-inch 6-color e-Paper
  *----------------
- * |	This version:   V1.0
- * | Date        :   2025-01-21
- * | Info        :
+ * | Version:   V2.0
+ * | Changelog   :
+ * |                2025-01-21  :   First Version
+ * |                2025-02-08  :   Access Tuya IoT platform, support App network configuration
  ******************************************************************************/
 #include "EPD_Test.h"
 #include "EPD_4in0e.h"
 #include "tal_api.h"
-#include "tal_wifi.h"
 #include "tal_network.h"
 #include "tal_system.h"
+#include "netmgr.h"
+#include "tuya_config.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 /***********************************************************
- *                    WiFi 配置
- ***********************************************************/
-#define WIFI_SSID     "WiFi名称"
-#define WIFI_PASSWORD "WiFi密码"
-
-/***********************************************************
  *                    Socket 配置
  ***********************************************************/
-#define SOCKET_SERVER_IP   "192.168.1.15"   // socket服务地址
 #define SOCKET_SERVER_PORT 18888            // socket服务端口
 #define RECV_BUFFER_SIZE   1024
 #define LOOP_INTERVAL_MS   180000 // 循环间隔
 #define IMAGE_BUFFER_SIZE  120000 // 400x600 屏幕 6 色格式大小 (400*600/2)
 
+/* 默认服务器地址字节（如果没有从 App 设置） */
+#define DEFAULT_SERVER_IP_BYTES  {192, 168, 1, 15}
+
+/* 存储当前使用的服务器 IP 字符串 */
+static char g_current_ip_str[32] = {0};
+
 /***********************************************************
- *                    全局变量
+ *                    全局变量 (在 main.c 中定义)
  ***********************************************************/
-static volatile bool g_wifi_connected   = false;
+extern volatile bool g_wifi_connected;
+extern volatile bool g_refresh_trigger;  // Trigger from Tuya App
+
+/* Server IP - active (confirmed and saved, used for connections) */
+extern uint8_t g_server_ip_active[4];
+
+/* Yield function (defined in main.c) */
+extern void user_tuya_yield(void);
+
 static volatile bool g_socket_connected = false;
-static int           g_image_index      = 0;
-static int           g_image_total      = 0;
 
 /***********************************************************
  *                    函数声明
  ***********************************************************/
-static void wifi_event_callback(WF_EVENT_E event, void *arg);
 static int  socket_send_command(const char *cmd, char *response, int resp_size);
 static int  socket_recv_json_response(char *response, int resp_size);
 static int  socket_get_image_data(uint8_t *data, uint32_t *data_size);
-static int  wifi_connect_wait(void);
+static int  net_wait_connected(void);
 static void print_hex_dump(const uint8_t *data, uint32_t len, uint32_t max_lines);
 
+/***********************************************************
+ *                    函数定义
+ ***********************************************************/
+
 /**
- * @brief WiFi 事件回调函数
+ * @brief 获取服务器IP字符串
+ * @note 从 g_server_ip_active 构造 IP 字符串
  */
-static void wifi_event_callback(WF_EVENT_E event, void *arg)
+static const char *get_server_ip(void)
 {
-    (void)arg;
-    OPERATE_RET op_ret = OPRT_OK;
-    NW_IP_S     sta_info;
-
-    PR_DEBUG("WiFi event callback: %d", event);
-
-    switch (event) {
-    case WFE_CONNECTED:
-        PR_DEBUG("WiFi connected!");
-        memset(&sta_info, 0, sizeof(NW_IP_S));
-        op_ret = tal_wifi_get_ip(WF_STATION, &sta_info);
-        if (OPRT_OK == op_ret) {
-            PR_DEBUG("IP: %s, Gateway: %s, Mask: %s", sta_info.ip, sta_info.gw, sta_info.mask);
-        }
-        g_wifi_connected = true;
-        break;
-
-    case WFE_CONNECT_FAILED:
-        PR_DEBUG("WiFi connection failed!");
-        g_wifi_connected = false;
-        break;
-
-    case WFE_DISCONNECTED:
-        PR_DEBUG("WiFi disconnected!");
-        g_wifi_connected   = false;
-        g_socket_connected = false;
-        break;
-
-    default:
-        break;
-    }
+    snprintf(g_current_ip_str, sizeof(g_current_ip_str),
+             "%d.%d.%d.%d",
+             g_server_ip_active[0],
+             g_server_ip_active[1],
+             g_server_ip_active[2],
+             g_server_ip_active[3]);
+    PR_DEBUG("Server IP: %s", g_current_ip_str);
+    return g_current_ip_str;
 }
 
 /**
- * @brief 等待WiFi连接
+ * @brief 等待网络连接
+ * @note 使用 netmgr 检查网络状态，不再使用 tal_wifi_* API
  * @return 0 成功, -1 超时失败
  */
-static int wifi_connect_wait(void)
+static int net_wait_connected(void)
 {
-    int timeout = 30; // 最多等待30秒
+    int timeout = 120; // 增加等待时间到120秒（给配网足够时间）
 
     while (timeout > 0) {
-        if (g_wifi_connected) {
-            PR_DEBUG("WiFi connected successfully");
+        // 处理 Tuya SDK 事件（必须调用，否则 WiFi 连接事件无法被处理）
+        user_tuya_yield();
+
+        // 检查 netmgr 状态
+        netmgr_status_e status = NETMGR_LINK_DOWN;
+        netmgr_conn_get(NETCONN_AUTO, NETCONN_CMD_STATUS, &status);
+
+        if (status != NETMGR_LINK_DOWN) {
+            g_wifi_connected = true;
+            PR_INFO("Network connected successfully! (status=%d)", status);
             return 0;
         }
+
+        // 每10秒输出一次状态，减少日志刷屏
+        if (timeout % 10 == 0 || timeout <= 10) {
+            PR_INFO("Waiting for network connection... (%ds remaining, status=%d)", timeout, status);
+        }
+
         tal_system_sleep(1000);
         timeout--;
-        PR_DEBUG("Waiting for WiFi connection... (%ds remaining)", timeout);
     }
 
-    PR_ERR("WiFi connection timeout");
+    PR_ERR("Network connection timeout - make sure device is paired with Tuya App");
     return -1;
 }
 
@@ -141,7 +144,7 @@ static int socket_send_command(const char *cmd, char *response, int resp_size)
     tal_net_set_timeout(fd, 5000, TRANS_SEND);
 
     // 解析服务器地址
-    server_addr = tal_net_str2addr(SOCKET_SERVER_IP);
+    server_addr = tal_net_str2addr(get_server_ip());
     if (server_addr == 0) {
         PR_ERR("Invalid server IP address");
         tal_net_close(fd);
@@ -155,7 +158,13 @@ static int socket_send_command(const char *cmd, char *response, int resp_size)
         tal_net_close(fd);
         return -1;
     }
-    PR_DEBUG("Connected to server %s:%d", SOCKET_SERVER_IP, SOCKET_SERVER_PORT);
+    PR_INFO("==========================================");
+    PR_INFO("  Connected to Image Server");
+    PR_INFO("==========================================");
+    PR_INFO("  Server: %s:%d", get_server_ip(), SOCKET_SERVER_PORT);
+
+    // 连接成功后处理SDK事件
+    user_tuya_yield();
 
     // 发送命令
     PR_DEBUG("Sending command: %s", cmd);
@@ -165,6 +174,9 @@ static int socket_send_command(const char *cmd, char *response, int resp_size)
         tal_net_close(fd);
         return -1;
     }
+
+    // 发送完成后处理SDK事件
+    user_tuya_yield();
 
     // 接收响应
     memset(response, 0, resp_size);
@@ -180,9 +192,13 @@ static int socket_send_command(const char *cmd, char *response, int resp_size)
         return -1;
     }
 
+    // 接收完成后处理SDK事件
+    user_tuya_yield();
+
     // 关闭socket
     tal_net_close(fd);
     g_socket_connected = false;
+    PR_INFO("==========================================");
 
     return 0;
 }
@@ -223,66 +239,32 @@ static void display_network_result(int status, const char *message)
 
 /**
  * @brief EPD 网络测试函数
- * @note 连接WiFi并通过socket循环获取数据: update -> info -> get_c (每15秒)
+ * @note 使用 netmgr 进行网络管理，通过 socket 循环获取数据: update -> info -> get_c
  */
 int EPD_test_net(void)
 {
-    OPERATE_RET op_ret = OPRT_OK;
-    char        response[RECV_BUFFER_SIZE];
-    uint8_t    *image_buffer = NULL;
-    uint32_t    image_size   = 0;
-    uint32_t    loop_count   = 0;
+    char response[RECV_BUFFER_SIZE];
+    uint8_t *image_buffer = NULL;
+    uint32_t image_size = 0;
+    uint32_t loop_count = 0;
 
-    PR_DEBUG("========== EPD Network Test Start ==========");
-    PR_DEBUG("WiFi SSID: %s", WIFI_SSID);
-    PR_DEBUG("Server: %s:%d", SOCKET_SERVER_IP, SOCKET_SERVER_PORT);
+    PR_NOTICE("========================================");
+    PR_NOTICE("  e-Paper Album Network Test");
+    PR_NOTICE("========================================");
+    PR_DEBUG("Server: %s:%d", get_server_ip(), SOCKET_SERVER_PORT);
     PR_DEBUG("Loop interval: %d ms", LOOP_INTERVAL_MS);
 
-    // ========== EPD 初始化代码已注释掉，优先调通网络 ==========
-    // 初始化电子纸
-    // if (DEV_Module_Init() != 0) {
-    //     PR_ERR("DEV Module Init failed");
-    //     return -1;
-    // }
-    // PR_DEBUG("e-Paper Init...");
-    // EPD_4IN0E_Init();
-    // EPD_4IN0E_Clear(EPD_4IN0E_WHITE);
-    // DEV_Delay_ms(500);
-    // ==========================================================
-
-    // 初始化WiFi
-    PR_DEBUG("Initializing WiFi...");
-    op_ret = tal_wifi_init(wifi_event_callback);
-    if (op_ret != OPRT_OK) {
-        PR_ERR("WiFi init failed: %d", op_ret);
+    // ========== 等待网络连接 ==========
+    // 网络初始化由 main.c 中的 netmgr 处理，这里只需要等待连接成功
+    PR_INFO("Waiting for network connection...");
+    if (net_wait_connected() != 0) {
+        PR_ERR("Network connection failed - please pair device with Tuya App first");
         return -1;
     }
 
-    // 设置为Station模式
-    op_ret = tal_wifi_set_work_mode(WWM_STATION);
-    if (op_ret != OPRT_OK) {
-        PR_ERR("Set work mode failed: %d", op_ret);
-        return -1;
-    }
+    PR_DEBUG("Network connected, entering main loop...");
 
-    // 连接WiFi
-    PR_DEBUG("Connecting to WiFi: %s", WIFI_SSID);
-    op_ret = tal_wifi_station_connect((int8_t *)WIFI_SSID, (int8_t *)WIFI_PASSWORD);
-    if (op_ret != OPRT_OK) {
-        PR_ERR("WiFi connect failed: %d", op_ret);
-        return -1;
-    }
-
-    // 等待WiFi连接成功
-    if (wifi_connect_wait() != 0) {
-        PR_ERR("WiFi connection timeout");
-        tal_wifi_station_disconnect();
-        return -1;
-    }
-
-    PR_DEBUG("WiFi connected, entering main loop...");
-
-    // ========== 主循环: 每15秒获取一次数据 ==========
+    // ========== 主循环: 每3分钟获取一次数据 ==========
     while (1) {
         loop_count++;
         PR_INFO("==========================================");
@@ -293,7 +275,13 @@ int EPD_test_net(void)
         PR_DEBUG("Step 1: Sending 'update' command...");
         if (socket_send_command("update", response, sizeof(response)) != 0) {
             PR_ERR("Update command failed, retrying in next cycle");
-            tal_system_sleep(LOOP_INTERVAL_MS);
+            // 等待时处理 SDK 事件
+            uint32_t wait_done = 0;
+            while (wait_done < LOOP_INTERVAL_MS) {
+                user_tuya_yield();
+                tal_system_sleep(1000);
+                wait_done += 1000;
+            }
             continue;
         }
         PR_DEBUG("Update response: %s", response);
@@ -301,27 +289,35 @@ int EPD_test_net(void)
         // 解析 current_index 和 total
         {
             char *p;
+            int current_index = 0;
+            int total = 0;
 
             // 解析 current_index
             p = strstr(response, "\"current_index\"");
             if (p) {
-                sscanf(p, "\"current_index\" : %d", &g_image_index);
+                sscanf(p, "\"current_index\" : %d", &current_index);
             }
 
             // 解析 total
             p = strstr(response, "\"total\"");
             if (p) {
-                sscanf(p, "\"total\" : %d", &g_image_total);
+                sscanf(p, "\"total\" : %d", &total);
             }
 
-            PR_DEBUG("Image index: %d, total: %d", g_image_index, g_image_total);
+            PR_DEBUG("Image index: %d, total: %d", current_index, total);
         }
 
         // ========== 第二步: 发送 info 命令 ==========
         PR_DEBUG("Step 2: Sending 'info' command...");
         if (socket_send_command("info", response, sizeof(response)) != 0) {
             PR_ERR("Info command failed, retrying in next cycle");
-            tal_system_sleep(LOOP_INTERVAL_MS);
+            // 等待时处理 SDK 事件
+            uint32_t wait_done = 0;
+            while (wait_done < LOOP_INTERVAL_MS) {
+                user_tuya_yield();
+                tal_system_sleep(1000);
+                wait_done += 1000;
+            }
             continue;
         }
         PR_DEBUG("Info response: %s", response);
@@ -342,7 +338,6 @@ int EPD_test_net(void)
             p = strstr(response, "\"total\"");
             if (p) {
                 sscanf(p, "\"total\" : %d", &total);
-                g_image_total = total;
             }
 
             // 解析 filename
@@ -373,7 +368,13 @@ int EPD_test_net(void)
         image_buffer = (uint8_t *)malloc(IMAGE_BUFFER_SIZE);
         if (image_buffer == NULL) {
             PR_ERR("Failed to allocate memory for image");
-            tal_system_sleep(LOOP_INTERVAL_MS);
+            // 等待时处理 SDK 事件
+            uint32_t wait_done = 0;
+            while (wait_done < LOOP_INTERVAL_MS) {
+                user_tuya_yield();
+                tal_system_sleep(1000);
+                wait_done += 1000;
+            }
             continue;
         }
 
@@ -381,7 +382,13 @@ int EPD_test_net(void)
             PR_ERR("Failed to get image data");
             free(image_buffer);
             image_buffer = NULL;
-            tal_system_sleep(LOOP_INTERVAL_MS);
+            // 等待时处理 SDK 事件
+            uint32_t wait_done = 0;
+            while (wait_done < LOOP_INTERVAL_MS) {
+                user_tuya_yield();
+                tal_system_sleep(1000);
+                wait_done += 1000;
+            }
             continue;
         }
 
@@ -399,7 +406,13 @@ int EPD_test_net(void)
             PR_ERR("DEV Module Init failed");
             free(image_buffer);
             image_buffer = NULL;
-            tal_system_sleep(LOOP_INTERVAL_MS);
+            // 等待时处理 SDK 事件
+            uint32_t wait_done = 0;
+            while (wait_done < LOOP_INTERVAL_MS) {
+                user_tuya_yield();
+                tal_system_sleep(1000);
+                wait_done += 1000;
+            }
             continue;
         }
 
@@ -413,12 +426,20 @@ int EPD_test_net(void)
 
         // 等待显示刷新完成 (30秒)
         PR_DEBUG("Waiting 30s for display refresh to complete...");
-        DEV_Delay_ms(30000);
+        // 等待时处理 SDK 事件（防止长时间阻塞导致 SDK 内部状态异常）
+        uint32_t waited_display = 0;
+        while (waited_display < 30000) {
+            user_tuya_yield();
+            tal_system_sleep(100);
+            waited_display += 100;
+        }
 
         // 进入睡眠
         PR_INFO("Enter Sleep mode");
         EPD_4IN0E_Sleep();
-        DEV_Delay_ms(500);
+        /* 处理SDK事件，防止500ms阻塞导致问题 */
+        user_tuya_yield();
+        tal_system_sleep(500);
         DEV_Module_Exit();
 
         // 释放内存
@@ -427,11 +448,21 @@ int EPD_test_net(void)
 
         // ========== 等待下一次循环 ==========
         PR_DEBUG("Waiting %d ms before next update...", LOOP_INTERVAL_MS);
-        tal_system_sleep(LOOP_INTERVAL_MS);
-    }
 
-    // 断开WiFi连接 (理论上不会执行到这里)
-    tal_wifi_station_disconnect();
+        // 等待时检查是否有来自 App 的刷新触发，同时处理 SDK 事件
+        uint32_t waited = 0;
+        while (waited < LOOP_INTERVAL_MS) {
+            if (g_refresh_trigger) {
+                PR_INFO("Refresh trigger from App detected!");
+                g_refresh_trigger = false;
+                break;  // 立即跳出等待，进入下一次更新
+            }
+            // 处理 SDK 事件（防止事件队列堆积导致 AP/BLE 异常）
+            user_tuya_yield();
+            tal_system_sleep(1000);
+            waited += 1000;
+        }
+    }
 
     PR_DEBUG("========== EPD Network Test End ==========");
     return 0;
@@ -466,7 +497,7 @@ static int socket_recv_json_response(char *response, int resp_size)
     tal_net_set_timeout(fd, 5000, TRANS_SEND);
 
     // 解析服务器地址
-    server_addr = tal_net_str2addr(SOCKET_SERVER_IP);
+    server_addr = tal_net_str2addr(get_server_ip());
     if (server_addr == 0) {
         PR_ERR("Invalid server IP address");
         tal_net_close(fd);
@@ -532,7 +563,7 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
     tal_net_set_timeout(fd, 5000, TRANS_SEND);
 
     // 解析服务器地址
-    server_addr = tal_net_str2addr(SOCKET_SERVER_IP);
+    server_addr = tal_net_str2addr(get_server_ip());
     if (server_addr == 0) {
         PR_ERR("Invalid server IP address");
         tal_net_close(fd);
@@ -547,6 +578,11 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
         return -1;
     }
 
+    PR_INFO("  Server: %s:%d", get_server_ip(), SOCKET_SERVER_PORT);
+
+    // 连接成功后处理SDK事件
+    user_tuya_yield();
+
     // 发送 "get_c" 命令
     TUYA_ERRNO send_ret = tal_net_send(fd, "get_c", 5);
     if (send_ret < 0) {
@@ -554,6 +590,9 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
         tal_net_close(fd);
         return -1;
     }
+
+    // 发送完成后处理SDK事件
+    user_tuya_yield();
 
     // 接收4字节长度头部（大端）
     memset(header, 0, sizeof(header));
@@ -579,6 +618,9 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
     // 接收图片数据
     received = 0;
     while (received < image_size) {
+        // 每接收一部分数据就处理SDK事件，防止事件堆积
+        user_tuya_yield();
+
         uint32_t to_recv = image_size - received;
         if (to_recv > 4096) {
             to_recv = 4096;
@@ -592,7 +634,11 @@ static int socket_get_image_data(uint8_t *data, uint32_t *data_size)
         received += recv_ret;
     }
 
+    // 接收完成后处理SDK事件
+    user_tuya_yield();
+
     PR_DEBUG("Received %u bytes image data", received);
+    PR_INFO("==========================================");
 
     // 关闭socket
     tal_net_close(fd);
