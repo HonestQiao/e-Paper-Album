@@ -1,0 +1,87 @@
+{
+  "title": "EPD 墨水屏 - 图片管理系统",
+  "navbar": {
+    "brand": "EPD 墨水屏 - 图片管理系统",
+    "refresh": "刷新",
+    "api": "API",
+    "language": "语言"
+  },
+  "upload": {
+    "title": "上传图片",
+    "dragHint": "拖拽图片到此处或点击上传",
+    "selectFiles": "选择文件",
+    "noOriginalFiles": "暂无原始图片",
+    "noBmpFiles": "暂无BMP图片",
+    "bmpPreview": "BMP图片预览",
+    "bmpPreviewFull": "BMP 图片预览",
+    "originalPreview": "原始图片预览",
+    "pendingFiles": "待转换文件",
+    "originalList": "原始图片列表",
+    "bmpList": "BMP图片列表",
+    "noPendingFiles": "暂无待转换文件",
+    "supportedFormats": "支持 JPG, PNG, GIF, BMP 格式，最大 16MB"
+  },
+  "fileList": {
+    "title": "文件列表",
+    "selectAll": "全选",
+    "batchConvert": "批量转换",
+    "batchDelete": "批量删除",
+    "selectedCount": "已选择",
+    "columns": {
+      "select": "选择",
+      "filename": "文件名",
+      "size": "大小",
+      "modified": "修改时间",
+      "action": "操作"
+    },
+    "actions": {
+      "convert": "转换",
+      "delete": "删除",
+      "preview": "预览"
+    },
+    "status": {
+      "converted": "已转换",
+      "pending": "待转换"
+    }
+  },
+  "progress": {
+    "title": "转换进度",
+    "percent": "进度",
+    "preparing": "准备转换...",
+    "converting": "正在转换...",
+    "completed": "转换完成",
+    "error": "转换出错"
+  },
+  "messages": {
+    "confirmDelete": "确定要删除吗？",
+    "confirmDeleteFile": "确定要删除 {filename} 吗？",
+    "confirmDeleteSelected": "确定要删除选中的 {count} 个文件吗？",
+    "confirmDeleteBMP": "确定要删除BMP文件 {filename} 吗？",
+    "confirmDeleteOriginal": "确定要删除原始文件 {filename} 吗？",
+    "deleteSuccess": "删除成功",
+    "deleteCancelled": "已取消删除操作",
+    "convertSuccess": "转换成功",
+    "convertFailed": "转换失败",
+    "uploadSuccess": "上传成功",
+    "uploadError": "上传失败",
+    "deleteError": "删除失败",
+    "networkError": "网络错误",
+    "loading": "加载中...",
+    "refreshing": "正在刷新...",
+    "refreshComplete": "刷新完成",
+    "selectFilesToConvert": "请选择要转换的文件",
+    "batchConvertStart": "开始批量转换 {count} 个文件...",
+    "batchDeleteStart": "开始批量删除 {count} 个文件...",
+    "selectFilesToDelete": "请选择要删除的文件",
+    "deletingFile": "正在删除文件...",
+    "converting": "正在转换...",
+    "success": "成功",
+    "error": "错误",
+    "info": "提示"
+  },
+  "languages": {
+    "zh-CN": "中文(简体)",
+    "zh-TW": "中文(繁体)",
+    "en": "English"
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "title": "EPD 電子紙 - 圖片管理系統",
+  "navbar": {
+    "brand": "EPD 電子紙 - 圖片管理系統",
+    "refresh": "重新整理",
+    "api": "API",
+    "language": "語言"
+  },
+  "upload": {
+    "title": "上傳圖片",
+    "dragHint": "拖曳圖片到此處或點擊上傳",
+    "selectFiles": "選擇檔案",
+    "noOriginalFiles": "暫無原始圖片",
+    "noBmpFiles": "暫無BMP圖片",
+    "bmpPreview": "BMP圖片預覽",
+    "bmpPreviewFull": "BMP 圖片預覽",
+    "originalPreview": "原始圖片預覽",
+    "pendingFiles": "待轉換檔案",
+    "originalList": "原始圖片列表",
+    "bmpList": "BMP圖片列表",
+    "noPendingFiles": "暫無待轉換檔案",
+    "supportedFormats": "支援 JPG, PNG, GIF, BMP 格式，最大 16MB"
+  },
+  "fileList": {
+    "title": "檔案列表",
+    "selectAll": "全選",
+    "batchConvert": "批次轉換",
+    "batchDelete": "批次刪除",
+    "selectedCount": "已選擇",
+    "columns": {
+      "select": "選擇",
+      "filename": "檔案名稱",
+      "size": "大小",
+      "modified": "修改時間",
+      "action": "操作"
+    },
+    "actions": {
+      "convert": "轉換",
+      "delete": "刪除",
+      "preview": "預覽"
+    },
+    "status": {
+      "converted": "已轉換",
+      "pending": "待轉換"
+    }
+  },
+  "progress": {
+    "title": "轉換進度",
+    "percent": "進度",
+    "preparing": "準備轉換...",
+    "converting": "正在轉換...",
+    "completed": "轉換完成",
+    "error": "轉換出錯"
+  },
+  "messages": {
+    "confirmDelete": "確定要刪除嗎？",
+    "confirmDeleteFile": "確定要刪除 {filename} 嗎？",
+    "confirmDeleteSelected": "確定要刪除選中的 {count} 個檔案嗎？",
+    "confirmDeleteBMP": "確定要刪除BMP檔案 {filename} 嗎？",
+    "confirmDeleteOriginal": "確定要刪除原始檔案 {filename} 嗎？",
+    "deleteSuccess": "刪除成功",
+    "deleteCancelled": "已取消刪除操作",
+    "convertSuccess": "轉換成功",
+    "convertFailed": "轉換失敗",
+    "uploadSuccess": "上傳成功",
+    "uploadError": "上傳失敗",
+    "deleteError": "刪除失敗",
+    "networkError": "網路錯誤",
+    "loading": "載入中...",
+    "refreshing": "正在重新整理...",
+    "refreshComplete": "重新整理完成",
+    "selectFilesToConvert": "請選擇要轉換的檔案",
+    "batchConvertStart": "開始批次轉換 {count} 個檔案...",
+    "batchDeleteStart": "開始批次刪除 {count} 個檔案...",
+    "selectFilesToDelete": "請選擇要刪除的檔案",
+    "deletingFile": "正在刪除檔案...",
+    "converting": "正在轉換...",
+    "success": "成功",
+    "error": "錯誤",
+    "info": "提示"
+  },
+  "languages": {
+    "zh-CN": "中文(簡體)",
+    "zh-TW": "中文(繁體)",
+    "en": "English"
+  }
+}

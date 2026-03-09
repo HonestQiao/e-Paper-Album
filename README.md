@@ -1,70 +1,70 @@
-# E-Paper 相册项目
+# E-Paper Album Project
 
-基于涂鸦 T5 平台的 E-Paper 电子纸显示屏网络相册系统，支持 WiFi 无线传输图片并远程更新显示内容。
+Network photo album system for E-Paper displays based on the Tuya T5 platform. Supports WiFi wireless image transmission and remote content updates.
 
-## 📁 项目结构
+## 📁 Project Structure
 
 ```
 e-Paper-Album/
-├── server/          # 服务端（Python）
-│   ├── manage.py                # 统一管理入口
-│   ├── web_server.py           # Web 管理界面
-│   ├── epd_socket_server.py    # Socket 服务器
-│   ├── epd_socket_client.py   # 测试客户端
-│   └── README.md              # 服务端详细说明
+├── server/          # Server side (Python)
+│   ├── manage.py                # Unified management entry point
+│   ├── web_server.py           # Web management interface
+│   ├── epd_socket_server.py    # Socket server
+│   ├── epd_socket_client.py   # Test client
+│   └── README.md              # Detailed server documentation
 │
-├── src/             # 硬件端（Tuya T5 嵌入式）
-│   ├── main.c                   # 程序入口
-│   ├── EPD_Album.c             # 网络相册核心功能
-│   ├── EPD_4in0e_test.c        # 基础测试
-│   ├── EPD_4in0e_test_Fast.c   # 优化版测试
-│   ├── ImageData.h             # 图片数据定义
-│   ├── EPD_Config.h            # EPD 配置
-│   └── EPD_Test.h              # 测试接口
+├── src/             # Hardware side (Tuya T5 Embedded)
+│   ├── main.c                   # Program entry point
+│   ├── EPD_Album.c             # Network album core functionality
+│   ├── EPD_4in0e_test.c        # Basic tests
+│   ├── EPD_4in0e_test_Fast.c   # Optimized tests
+│   ├── ImageData.h             # Image data definitions
+│   ├── EPD_Config.h            # EPD configuration
+│   └── EPD_Test.h              # Test interfaces
 │
-├── lib/             # 硬件端库文件
-│   ├── Config/      # 驱动配置
-│   ├── GUI/         # 图形界面库
-│   ├── e-Paper/     # 墨水屏驱动
-│   └── Fonts/       # 字体库
+├── lib/             # Hardware libraries
+│   ├── Config/      # Driver configuration
+│   ├── GUI/         # Graphics interface library
+│   ├── e-Paper/     # E-Paper driver
+│   └── Fonts/       # Font libraries
 │
-├── CMakeLists.txt   # CMake 构建配置
-├── requirements.txt # Python 依赖
-└── app_default.config # 应用配置
+├── CMakeLists.txt   # CMake build configuration
+├── requirements.txt # Python dependencies
+└── app_default.config # Application configuration
 ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 1. 服务端部署（电脑端）
+### 1. Server Deployment (Computer Side)
 
-#### 安装依赖
+#### Install Dependencies
 ```bash
 cd server
 pip install -r requirements.txt
 ```
 
-#### 启动服务
+#### Start Services
 ```bash
-# 启动所有服务（推荐）
+# Start all services (recommended)
 python manage.py --mode all --image-dir ./dist/data
 
-# 仅启动 Web 管理界面
+# Start Web management interface only
 python manage.py --mode web
 ```
 
-#### 访问 Web 界面
-打开浏览器访问：**http://localhost:5000**
+#### Access Web Interface
+Open browser and visit: **http://localhost:5000**
 
-- 上传图片（JPG、PNG、BMP、GIF）
-- 自动转换为 BMP 格式
-- 管理图片列表
-- 实时查看转换进度
+- Upload images (JPG, PNG, BMP, GIF)
+- Automatic conversion to BMP format
+- Manage image lists
+- Real-time conversion progress
 
-![WEB管理界面](server/static/img/web.png)
+![WEB Management Interface](server/static/img/web.png)
 
-### 2. 硬件端部署（T5 开发板）
+### 2. Hardware Deployment (T5 Development Board)
 
-#### 编译固件
+#### Build Firmware
 ```bash
 tos config choice
 tos build
@@ -72,51 +72,51 @@ tos flash
 tos monitor
 ```
 
-#### 配置 WiFi 和服务器地址
-编辑 `src/EPD_Album.c`：
+#### Configure WiFi and Server Address
+Edit `src/EPD_Album.c`:
 ```c
-#define WIFI_SSID     "你的WiFi名称"
-#define WIFI_PASSWORD "你的WiFi密码"
-#define SOCKET_SERVER_IP   "192.168.1.100"  // 电脑IP地址
-#define SOCKET_SERVER_PORT 18888            // Socket服务端口
+#define WIFI_SSID     "Your_WiFi_SSID"
+#define WIFI_PASSWORD "Your_WiFi_Password"
+#define SOCKET_SERVER_IP   "192.168.1.100"  // Computer IP address
+#define SOCKET_SERVER_PORT 18888            // Socket service port
 ```
 
-#### 烧录运行
-- 将固件烧录到 T5 开发板
-- 重启设备
-- 查看串口日志确认连接状态
+#### Flash and Run
+- Flash firmware to T5 development board
+- Restart device
+- Check serial debug logs for connection status
 
-#### 显示效果
-![虎](server/static/img/tiger.jpg)server/static/img/tiger.jpg
-![设备显示效果](server/static/img/device.jpg)
+#### Display Effect
+![Tiger](server/static/img/tiger.jpg)server/static/img/tiger.jpg
+![Device Display Effect](server/static/img/device.jpg)
 
-## 💡 功能特性
+## 💡 Features
 
-### 服务端
-- **Web 管理界面**：图片上传、预览、管理
-- **Socket 服务器**：提供 TCP 网络接口
-- **文件监控**：自动检测图片变化（5秒防抖）
-- **图片转换**：支持多种格式转换为 BMP
-- **图片排序**：支持数字文件名排序
+### Server Side
+- **Web Management Interface**: Image upload, preview, and management
+- **Socket Server**: Provides TCP network interface
+- **File Monitoring**: Auto-detect image changes (5-second debounce)
+- **Image Conversion**: Supports multiple formats to BMP conversion
+- **Image Sorting**: Supports numeric filename sorting
 
-### 硬件端
-- **WiFi 连接**：自动连接指定 WiFi 网络
-- **Socket 通信**：与服务器保持 TCP 连接
-- **图片显示**：支持 400×600 像素 6 色显示
-- **自动轮播**：每 3 分钟自动切换下一张图片
-- **断线重连**：网络异常后自动重连
+### Hardware Side
+- **WiFi Connection**: Auto-connect to specified WiFi network
+- **Socket Communication**: Maintain TCP connection with server
+- **Image Display**: Supports 400×600 pixel 6-color display
+- **Auto Slideshow**: Auto-switch to next image every 3 minutes
+- **Auto Reconnect**: Automatically reconnect after network failures
 
-## 📊 系统架构
+## 📊 System Architecture
 
 ```
 ┌─────────────────┐
-│   Web 浏览器     │──┐
+│   Web Browser   │──┐
 └─────────────────┘  │
                      │ HTTP (5000)
 ┌─────────────────┐  │
 │  web_server.py  │  │
 └─────────────────┘  │
-         │
+         │           │
 ┌─────────────────┐  │
 │  manage.py      │──┘
 └─────────────────┘
@@ -124,74 +124,74 @@ tos monitor
          │ TCP (18888)
          │
     ┌───────────┐
-    │ T5 开发板  │
+    │ T5 Board  │
     │(E-Paper)  │
     └───────────┘
          │
     ┌───────────┐
-    │  WiFi    │
+    │   WiFi    │
     └───────────┘
 ```
 
-## 🔧 主要配置
+## 🔧 Main Configuration
 
-### WiFi 配置
-- **文件**：`src/EPD_Album.c`
-- **宏定义**：`WIFI_SSID`、`WIFI_PASSWORD`
+### WiFi Configuration
+- **File**: `src/EPD_Album.c`
+- **Macros**: `WIFI_SSID`, `WIFI_PASSWORD`
 
-### Socket 配置
-- **文件**：`src/EPD_Album.c`
-- **服务器地址**：`SOCKET_SERVER_IP`
-- **端口**：`SOCKET_SERVER_PORT`（默认 18888）
+### Socket Configuration
+- **File**: `src/EPD_Album.c`
+- **Server Address**: `SOCKET_SERVER_IP`
+- **Port**: `SOCKET_SERVER_PORT` (default 18888)
 
-### 图片轮播
-- **文件**：`src/EPD_Album.c`
-- **轮播间隔**：`LOOP_INTERVAL_MS`（默认 180000ms = 3分钟）
+### Slideshow Settings
+- **File**: `src/EPD_Album.c`
+- **Interval**: `LOOP_INTERVAL_MS` (default 180000ms = 3 minutes)
 
-## 📝 Socket 命令
+## 📝 Socket Commands
 
-硬件端支持的 Socket 命令：
+Socket commands supported by the hardware side:
 
-| 命令 | 功能 | 返回 |
-|------|------|------|
-| `update` | 获取下一张图片并切换 | 图片信息 + 数据 |
-| `info` | 获取当前图片信息 | 图片详情（不切换） |
-| `get` | 获取当前图片二进制数据 | BMP 格式数据 |
-| `get_c` | 获取 C 数组格式数据 | C 代码数组 |
-| `list` | 获取图片列表 | 所有图片文件列表 |
+| Command | Function | Returns |
+|---------|----------|---------|
+| `update` | Get next image and switch | Image info + data |
+| `info` | Get current image info | Image details (no switch) |
+| `get` | Get current image binary data | BMP format data |
+| `get_c` | Get C array format data | C code array |
+| `list` | Get image list | All image file list |
 
-## 🐛 测试验证
+## 🐛 Testing and Verification
 
-### 测试 Socket 连接
+### Test Socket Connection
 ```bash
-# 在 server 目录下
+# In server directory
 python epd_socket_client.py update
 python epd_socket_client.py list
 python epd_socket_client.py get_c
 ```
 
-### 监控日志
-- **服务端日志**：查看控制台输出
-- **硬件端日志**：查看串口调试输出
+### Monitor Logs
+- **Server logs**: Check console output
+- **Hardware logs**: Check serial debug output
 
-## ⚠️ 注意事项
+## ⚠️ Important Notes
 
-1. **网络连通性**：确保 T5 开发板和电脑在同一局域网
-2. **防火墙**：开放 18888 端口（Socket）和 5000 端口（Web）
-3. **图片格式**：建议使用 400×600 像素 BMP 格式
-4. **图片大小**：单张图片不超过 120KB（400×600×6色/2）
-5. **文件名**：建议使用数字前缀（如 `01_xxx.bmp`）便于排序
+1. **Network Connectivity**: Ensure T5 board and computer are on the same LAN
+2. **Firewall**: Open port 18888 (Socket) and port 5000 (Web)
+3. **Image Format**: Recommended 400×600 pixel BMP format
+4. **Image Size**: Single image should not exceed 120KB (400×600×6 colors/2)
+5. **Filename**: Recommended numeric prefix (e.g., `01_xxx.bmp`) for easy sorting
 
-## 📄 许可证
+## 📄 License
 
-本项目基于 [LICENSE](LICENSE) 文件中的条款发布。
+This project is released under the terms specified in the [LICENSE](LICENSE) file.
 
-## 🤝 技术支持
+## 🤝 Technical Support
 
-如有问题，请查看：
-- `server/README.md` - 服务端详细文档
-- `src/EPD_Config.h` - 硬件端测试接口
-- 控制台日志输出
+For questions, please refer to:
+- `server/README.md` - Detailed server documentation
+- `src/EPD_Config.h` - Hardware test interfaces
+- Console log output
 
-## 相关链接
-- [基于涂鸦T5的智能生肖相册墨水屏 - 嘉立创开源硬件](https://oshwhub.com/article/tuya-e-paper-album)
+## Related Links
+- [Tuya T5 Based Smart Zodiac E-Paper Album - Oshwhub Open Source Hardware](https://oshwhub.com/article/tuya-e-paper-album)

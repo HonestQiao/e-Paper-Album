@@ -1,116 +1,116 @@
-# EPD 墨水屏图片管理系统
+# EPD E-Paper Image Management System
 
-E-Paper Display 图片管理系统，提供 Web 界面管理和 Socket 网络通信服务。
+E-Paper Display image management system, providing Web interface management and Socket network communication services.
 
-## 📋 核心文件说明
+## 📋 Core File Descriptions
 
 ### 1. manage.py
-**统一管理系统入口**
+**Unified Management System Entry Point**
 
-- **功能**：统一启动和管理 Web 服务与 Socket 服务
-- **用途**：项目的总入口，支持三种运行模式
-- **启动方法**：
+- **Function**: Unified startup and management of Web and Socket services
+- **Purpose**: Main project entry point, supports three running modes
+- **Startup Methods**:
   ```bash
-  # 启动所有服务（推荐）
+  # Start all services (recommended)
   python manage.py --mode all
 
-  # 仅启动 Web 服务
+  # Start Web service only
   python manage.py --mode web
 
-  # 仅启动 Socket 服务
+  # Start Socket service only
   python manage.py --mode socket
 
-  # 自定义端口和目录
+  # Custom ports and directories
   python manage.py --mode all --web-port 5000 --socket-port 18888 --image-dir ./dist/data
   ```
 
 ### 2. web_server.py
-**Web 管理界面**
+**Web Management Interface**
 
-- **功能**：提供 Web 界面进行图片上传、预览、管理
-- **用途**：浏览器访问，图形化管理界面，支持图片格式转换
-- **启动方法**：
+- **Function**: Provides Web interface for image upload, preview, and management
+- **Purpose**: Browser access, graphical management interface, supports image format conversion
+- **Startup Methods**:
   ```bash
-  # 使用默认配置（端口 5000）
+  # Use default configuration (port 5000)
   python web_server.py
 
-  # 自定义主机和端口
+  # Custom host and port
   python web_server.py --host 0.0.0.0 --port 5000
   ```
 
 ### 3. epd_socket_server.py
-**Socket 服务器**
+**Socket Server**
 
-- **功能**：监听 TCP 连接，处理客户端命令，返回图片数据
-- **用途**：与 E-Paper 设备通信，支持文件监控自动更新图片列表
-- **启动方法**：
+- **Function**: Listen for TCP connections, process client commands, return image data
+- **Purpose**: Communicate with E-Paper device, support file monitoring and automatic image list updates
+- **Startup Methods**:
   ```bash
-  # 使用默认配置（端口 18888）
+  # Use default configuration (port 18888)
   python epd_socket_server.py
 
-  # 指定图片目录
+  # Specify image directory
   python epd_socket_server.py --image-dir ./dist/data
 
-  # 自定义主机和端口
+  # Custom host and port
   python epd_socket_server.py --host 0.0.0.0 --port 18888
   ```
 
 ### 4. epd_socket_client.py
-**Socket 客户端（测试工具）**
+**Socket Client (Test Tool)**
 
-- **功能**：连接 Socket 服务器，发送命令测试服务
-- **用途**：调试和测试 Socket 服务器功能
-- **启动方法**：
+- **Function**: Connect to Socket server, send commands to test services
+- **Purpose**: Debug and test Socket server functionality
+- **Startup Methods**:
   ```bash
-  # 交互模式
+  # Interactive mode
   python epd_socket_client.py
 
-  # 发送命令（非交互）
+  # Send command (non-interactive)
   python epd_socket_client.py update
 
-  # 下载当前图片
+  # Download current image
   python epd_socket_client.py get -o ./downloaded
 
-  # 使用 C 数组格式下载
+  # Download using C array format
   python epd_socket_client.py get_c
 
-  # 自定义服务器地址
+  # Custom server address
   python epd_socket_client.py --host 127.0.0.1 --port 18888 status
   ```
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
-### 方式一：统一启动（推荐）
+### Method 1: Unified Startup (Recommended)
 ```bash
 python manage.py --mode all --image-dir ./dist/data
 ```
 
-### 方式二：分别启动
+### Method 2: Separate Startup
 ```bash
-# 终端 1：启动 Web 服务
+# Terminal 1: Start Web service
 python web_server.py
 
-# 终端 2：启动 Socket 服务
+# Terminal 2: Start Socket service
 python epd_socket_server.py --image-dir ./dist/data
 ```
 
-### 方式三：测试连接
+### Method 3: Test Connection
 ```bash
-# 测试 Socket 服务器
+# Test Socket server
 python epd_socket_client.py update
 python epd_socket_client.py list
 ```
 
-## 📊 系统架构
+## 📊 System Architecture
 
 ```
 ┌─────────────────┐
-│   Web 浏览器     │──┐
+│   Web Browser   │──┐
 └─────────────────┘  │
                      │ HTTP (5000)
 ┌─────────────────┐  │
 │  web_server.py  │  │
-│  (Flask Web)     │  │
+│  (Flask Web)    │  │
 └─────────────────┘  │
                      │
 ┌─────────────────┐  │
@@ -124,62 +124,168 @@ python epd_socket_client.py list
 │   .py           │
 └─────────────────┘
          │
-         │ 文件监控
+         │ File Monitoring
          │
 ┌─────────────────┐
 │   ./dist/data   │
-│   (BMP 图片)     │
+│   (BMP Images)  │
 └─────────────────┘
 
 ┌─────────────────┐
 │epd_socket_client│
 │   .py           │
-│  (测试客户端)     │
+│  (Test Client)  │
 └─────────────────┘
 ```
 
-## 🔧 主要功能
+## 🔧 Main Features
 
-### Web 管理界面
-- 图片上传（JPG、PNG、BMP、GIF）
-- 自动转换为 BMP 格式
-- 图片预览和管理
-- 实时转换进度显示
+### Web Management Interface
+- Image upload (JPG, PNG, BMP, GIF)
+- Automatic conversion to BMP format
+- Image preview and management
+- Real-time conversion progress display
+- **Multi-language Support**: Switch between Chinese (Simplified), Chinese (Traditional), and English via the language dropdown in the top-right corner
 
-### Socket 服务器
-- 监听 18888 端口
-- 支持命令：`update`、`info`、`get`、`get_c`、`list`
-- 文件监控：自动检测 BMP 图片变化
-- 5秒防抖动机制：避免频繁更新
-- 文件名排序：支持数字文件名排序
+### Socket Server
+- Listen on port 18888
+- Support commands: `update`, `info`, `get`, `get_c`, `list`
+- File monitoring: Auto-detect BMP image changes
+- 5-second debounce mechanism: Prevent frequent updates
+- Filename sorting: Support numeric filename sorting
 
-### 文件监控特性
-- 自动扫描 `dist/data` 目录下的 BMP 文件
-- 文件修改时间+大小校验和检测变化
-- 变化后 5 秒防抖动延迟
-- 自动重新加载图片列表
+### File Monitoring Features
+- Auto-scan BMP files in `dist/data` directory
+- File modification time + size checksum for change detection
+- 5-second debounce delay after changes
+- Automatic reload of image list
 
-## ⚙️ 配置说明
+## ⚙️ Configuration
 
-### 默认端口
-- **Web 服务**：5000
-- **Socket 服务**：18888
+### Default Ports
+- **Web Service**: 5000
+- **Socket Service**: 18888
 
-### 默认目录
-- **图片目录**：`./dist/data`
-- **上传目录**：`./uploads`
+### Default Directories
+- **Image Directory**: `./dist/data`
+- **Upload Directory**: `./uploads`
 
-### 支持的图片格式
-- 输入：JPG、JPEG、PNG、GIF、BMP
-- 输出：BMP（用于 E-Paper 显示）
+### Supported Image Formats
+- Input: JPG, JPEG, PNG, GIF, BMP
+- Output: BMP (for E-Paper display)
 
-## 📝 依赖安装
+## 📝 Dependency Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-或单独安装：
+Or install separately:
 ```bash
 pip install "Flask>=2.3.0" "Pillow>=10.0.0"
+```
+
+## 🌍 Multi-language Support
+
+The Web interface supports multiple languages:
+
+- **Chinese (Simplified)** - 中文(简体)
+- **Chinese (Traditional)** - 中文(繁體)
+- **English** - English
+
+### Switching Languages
+Click the language dropdown button in the top-right corner of the Web interface to switch languages. The language preference is saved in cookies and will be automatically restored on your next visit.
+
+### Adding New Languages
+
+1. Create a new JSON file in `static/locales/` (e.g., `ja.json` for Japanese):
+   ```bash
+   cp static/locales/en.json static/locales/ja.json
+   ```
+
+2. Translate the content in the new file
+
+3. Add the new language to `supportedLangs` array in `templates/index.html`:
+   ```javascript
+   supportedLangs: ['zh-CN', 'zh-TW', 'en', 'ja'],
+   ```
+
+4. Add the language option to the dropdown menu in `templates/index.html`:
+   ```html
+   <li><a class="dropdown-item" href="#" onclick="setLanguage('ja')" data-lang="ja">日本語</a></li>
+   ```
+
+5. Add the language name to all language files under the `languages` key:
+   ```json
+   "languages": {
+       "zh-CN": "中文(简体)",
+       "zh-TW": "中文(繁體)",
+       "en": "English",
+       "ja": "日本語"
+   }
+   ```
+
+## 📡 API Endpoints
+
+### Web Server API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Web interface homepage |
+| `/api/images` | GET | Get list of BMP images |
+| `/api/uploads` | GET | Get list of uploaded files |
+| `/api/upload` | POST | Upload new images |
+| `/api/convert` | POST | Convert image to BMP |
+| `/api/delete` | POST | Delete uploaded file |
+| `/api/delete-bmp` | POST | Delete BMP file |
+| `/api/batch_convert` | POST | Batch convert images |
+| `/api/batch_delete` | POST | Batch delete images |
+| `/api/progress/<filename>` | GET | Get conversion progress |
+| `/api/refresh` | GET | Refresh image list |
+
+### Socket Server Protocol
+
+**Connection**: TCP on port 18888
+
+**Command Format**: Send command string followed by newline
+
+**Commands**:
+- `update` - Get next image index and switch
+- `info` - Get current image information
+- `get` - Get current image binary data (BMP)
+- `get_c` - Get current image as C array
+- `list` - Get list of all images
+
+**Response Format** (JSON):
+```json
+{
+    "success": true,
+    "data": { ... }
+}
+```
+
+## 🔍 Debugging
+
+### Check Service Status
+```bash
+# Check if ports are listening
+netstat -an | grep -E '5000|18888'
+
+# Check process
+ps aux | grep python
+```
+
+### View Logs
+- Server logs are output to console by default
+- Log files can be configured with `--log-file` option
+
+### Test Socket Connection
+```bash
+# Using netcat
+nc localhost 18888
+
+# Then type command and press Enter:
+# update
+# info
+# list
 ```

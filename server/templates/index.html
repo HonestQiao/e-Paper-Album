@@ -188,15 +188,26 @@
         <div class="container">
             <a class="navbar-brand" href="#">
                 <i class="bi bi-display"></i>
-                EPD 墨水屏 - 图片管理系统
+                <span data-i18n="navbar.brand">EPD 墨水屏 - 图片管理系统</span>
             </a>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
                 <button class="btn btn-light btn-sm me-2" onclick="refreshData()">
-                    <i class="bi bi-arrow-clockwise"></i> 刷新
+                    <i class="bi bi-arrow-clockwise"></i> <span data-i18n="navbar.refresh">刷新</span>
                 </button>
-                <a href="/api/images" target="_blank" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-code-square"></i> API
+                <a href="/api/images" target="_blank" class="btn btn-outline-light btn-sm me-2">
+                    <i class="bi bi-code-square"></i> <span data-i18n="navbar.api">API</span>
                 </a>
+                <!-- 语言切换下拉菜单 -->
+                <div class="dropdown">
+                    <button class="btn btn-outline-light btn-sm dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-globe"></i> <span id="currentLanguage">中文(简体)</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                        <li><a class="dropdown-item" href="#" onclick="setLanguage('zh-CN')" data-lang="zh-CN">中文(简体)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setLanguage('zh-TW')" data-lang="zh-TW">中文(繁體)</a></li>
+                        <li><a class="dropdown-item" href="#" onclick="setLanguage('en')" data-lang="en">English</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
@@ -209,15 +220,15 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <i class="bi bi-cloud-upload"></i> 上传图片
+                        <i class="bi bi-cloud-upload"></i> <span data-i18n="upload.title">上传图片</span>
                     </div>
                     <div class="card-body">
                         <div class="upload-area" id="uploadArea">
                             <i class="bi bi-cloud-arrow-up" style="font-size: 48px; color: #667eea;"></i>
-                            <h5 class="mt-3">拖拽图片到此处或点击上传</h5>
-                            <p class="text-muted">支持 JPG, PNG, GIF, BMP 格式，最大 16MB</p>
+                            <h5 class="mt-3" data-i18n="upload.dragHint">拖拽图片到此处或点击上传</h5>
+                            <p class="text-muted" data-i18n="upload.supportedFormats">支持 JPG, PNG, GIF, BMP 格式，最大 16MB</p>
                             <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
-                                <i class="bi bi-folder-open"></i> 选择文件
+                                <i class="bi bi-folder-open"></i> <span data-i18n="upload.selectFiles">选择文件</span>
                             </button>
                             <input type="file" id="fileInput" class="file-input" multiple
                                    accept=".jpg,.jpeg,.png,.gif,.bmp">
@@ -237,7 +248,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="bi bi-image"></i> 原始图片预览
+                            <i class="bi bi-image"></i> <span data-i18n="upload.originalPreview">原始图片预览</span>
                             <span class="badge bg-light text-dark ms-2" id="originalPreviewCount">0</span>
                         </span>
                     </div>
@@ -245,7 +256,7 @@
                         <div id="originalPreview" class="image-grid">
                             <div class="text-center text-muted py-3">
                                 <i class="bi bi-file-earmark-image" style="font-size: 48px;"></i>
-                                <p class="mt-2">暂无原始图片</p>
+                                <p class="mt-2" data-i18n="upload.noOriginalFiles">暂无原始图片</p>
                             </div>
                         </div>
                     </div>
@@ -255,7 +266,7 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="bi bi-image"></i> BMP图片预览
+                            <i class="bi bi-image"></i> <span data-i18n="upload.bmpPreviewFull">BMP 图片预览</span>
                             <span class="badge bg-light text-dark ms-2" id="bmpPreviewCount">0</span>
                         </span>
                     </div>
@@ -263,7 +274,7 @@
                         <div id="bmpPreview" class="image-grid">
                             <div class="text-center text-muted py-3">
                                 <i class="bi bi-image" style="font-size: 48px;"></i>
-                                <p class="mt-2">暂无BMP图片</p>
+                                <p class="mt-2" data-i18n="upload.noBmpFiles">暂无BMP图片</p>
                             </div>
                         </div>
                     </div>
@@ -277,12 +288,12 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="bi bi-cloud-upload"></i> 待转换文件
+                            <i class="bi bi-cloud-upload"></i> <span data-i18n="upload.pendingFiles">待转换文件</span>
                             <span class="badge bg-light text-dark ms-2" id="uploadCount">0</span>
                         </span>
                         <div>
                             <button class="btn btn-light btn-sm" onclick="loadUploads()">
-                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                                <i class="bi bi-arrow-clockwise"></i> <span data-i18n="navbar.refresh">刷新</span>
                             </button>
                         </div>
                     </div>
@@ -290,13 +301,13 @@
                         <div class="d-flex align-items-center">
                             <input type="checkbox" id="selectAll" class="form-check-input me-2"
                                    onchange="toggleSelectAll()">
-                            <label for="selectAll" class="form-check-label mb-0">全选</label>
+                            <label for="selectAll" class="form-check-label mb-0" data-i18n="fileList.selectAll">全选</label>
                             <span class="ms-3">
                                 <button class="btn btn-success btn-sm me-2" onclick="batchConvert()" disabled id="batchConvertBtn">
-                                    <i class="bi bi-arrow-right"></i> 批量转换 (<span id="selectedCount">0</span>)
+                                    <i class="bi bi-arrow-right"></i> <span data-i18n="fileList.batchConvert">批量转换</span> (<span id="selectedCount">0</span>)
                                 </button>
                                 <button class="btn btn-danger btn-sm" onclick="batchDelete()" disabled id="batchDeleteBtn">
-                                    <i class="bi bi-trash"></i> 批量删除 (<span id="selectedCountDelete">0</span>)
+                                    <i class="bi bi-trash"></i> <span data-i18n="fileList.batchDelete">批量删除</span> (<span id="selectedCountDelete">0</span>)
                                 </button>
                             </span>
                         </div>
@@ -306,17 +317,17 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th style="width: 40px;">选择</th>
-                                        <th>文件名</th>
-                                        <th>大小</th>
-                                        <th>修改时间</th>
-                                        <th>操作</th>
+                                        <th style="width: 40px;" data-i18n="fileList.columns.select">选择</th>
+                                        <th data-i18n="fileList.columns.filename">文件名</th>
+                                        <th data-i18n="fileList.columns.size">大小</th>
+                                        <th data-i18n="fileList.columns.modified">修改时间</th>
+                                        <th data-i18n="fileList.columns.action">操作</th>
                                     </tr>
                                 </thead>
                                 <tbody id="uploadTableBody">
                                     <tr>
                                         <td colspan="4" class="text-center text-muted">
-                                            <i class="bi bi-hourglass-split"></i> 加载中...
+                                            <i class="bi bi-hourglass-split"></i> <span data-i18n="messages.loading">加载中...</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -333,12 +344,12 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="bi bi-file-earmark-image"></i> 原始图片列表
+                            <i class="bi bi-file-earmark-image"></i> <span data-i18n="upload.originalList">原始图片列表</span>
                             <span class="badge bg-light text-dark ms-2" id="originalListCount">0</span>
                         </span>
                         <div>
                             <button class="btn btn-light btn-sm" onclick="loadOriginalList()">
-                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                                <i class="bi bi-arrow-clockwise"></i> <span data-i18n="navbar.refresh">刷新</span>
                             </button>
                         </div>
                     </div>
@@ -346,7 +357,7 @@
                         <div id="originalList" class="file-list">
                             <div class="text-center text-muted py-3">
                                 <i class="bi bi-file-earmark-image" style="font-size: 32px;"></i>
-                                <p class="mt-2">暂无原始图片</p>
+                                <p class="mt-2" data-i18n="upload.noOriginalFiles">暂无原始图片</p>
                             </div>
                         </div>
                     </div>
@@ -356,12 +367,12 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <span>
-                            <i class="bi bi-image"></i> BMP图片列表
+                            <i class="bi bi-image"></i> <span data-i18n="upload.bmpList">BMP图片列表</span>
                             <span class="badge bg-light text-dark ms-2" id="bmpListCount">0</span>
                         </span>
                         <div>
                             <button class="btn btn-light btn-sm" onclick="loadBMPFiles()">
-                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                                <i class="bi bi-arrow-clockwise"></i> <span data-i18n="navbar.refresh">刷新</span>
                             </button>
                         </div>
                     </div>
@@ -369,7 +380,7 @@
                         <div id="bmpList" class="file-list">
                             <div class="text-center text-muted py-3">
                                 <i class="bi bi-image" style="font-size: 32px;"></i>
-                                <p class="mt-2">暂无BMP图片</p>
+                                <p class="mt-2" data-i18n="upload.noBmpFiles">暂无BMP图片</p>
                             </div>
                         </div>
                     </div>
@@ -407,10 +418,10 @@
                     <div class="progress mb-2" style="height: 25px;">
                         <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated"
                              role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-                            <span id="progressPercent">0%</span>
+                            <span id="progressPercent" data-i18n="progress.percent">0%</span>
                         </div>
                     </div>
-                    <div id="progressMessage" class="text-muted small text-center">准备转换...</div>
+                    <div id="progressMessage" class="text-muted small text-center" data-i18n="progress.preparing">准备转换...</div>
                 </div>
             </div>
         </div>
@@ -421,12 +432,156 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // ==================== i18n 国际化模块 ====================
+        const I18N = {
+            currentLang: 'zh-CN',
+            translations: {},
+            defaultLang: 'zh-CN',
+            supportedLangs: ['zh-CN', 'zh-TW', 'en'],
+
+            // Cookie 操作
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            },
+
+            setCookie(name, value, days = 365) {
+                const expires = new Date(Date.now() + days * 864e5).toUTCString();
+                document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+            },
+
+            // 获取浏览器语言
+            getBrowserLanguage() {
+                const lang = navigator.language || navigator.userLanguage || 'zh-CN';
+                if (lang.startsWith('zh')) {
+                    if (lang.includes('TW') || lang.includes('HK')) return 'zh-TW';
+                    return 'zh-CN';
+                }
+                if (lang.startsWith('en')) return 'en';
+                return this.defaultLang;
+            },
+
+            // 初始化语言
+            initLanguage() {
+                const cookieLang = this.getCookie('epd_language');
+                if (cookieLang && this.supportedLangs.includes(cookieLang)) {
+                    this.currentLang = cookieLang;
+                } else {
+                    this.currentLang = this.getBrowserLanguage();
+                    this.setCookie('epd_language', this.currentLang);
+                }
+            },
+
+            // 加载翻译文件
+            async loadTranslations(lang) {
+                try {
+                    const response = await fetch(`/static/locales/${lang}.json`);
+                    if (!response.ok) throw new Error(`Failed to load ${lang}`);
+                    this.translations = await response.json();
+                    return true;
+                } catch (error) {
+                    console.error('Failed to load translations:', error);
+                    if (lang !== this.defaultLang) {
+                        return this.loadTranslations(this.defaultLang);
+                    }
+                    return false;
+                }
+            },
+
+            // 获取翻译文本（支持变量替换）
+            t(key, vars = {}, fallback = '') {
+                const keys = key.split('.');
+                let value = this.translations;
+                for (const k of keys) {
+                    if (value && typeof value === 'object' && k in value) {
+                        value = value[k];
+                    } else {
+                        return fallback || key;
+                    }
+                }
+                let text = value || fallback || key;
+                // 变量替换
+                if (typeof text === 'string') {
+                    for (const [k, v] of Object.entries(vars)) {
+                        text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+                    }
+                }
+                return text;
+            },
+
+            // 应用翻译到页面
+            applyTranslations() {
+                // 更新页面标题
+                document.title = this.t('title', {}, 'EPD 墨水屏 - 图片管理系统');
+
+                // 更新所有带有 data-i18n 属性的元素
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    const text = this.t(key);
+                    if (text !== key) {
+                        el.textContent = text;
+                    }
+                });
+
+                // 更新当前语言显示
+                const currentLangText = this.t(`languages.${this.currentLang}`, {}, this.currentLang);
+                const currentLangEl = document.getElementById('currentLanguage');
+                if (currentLangEl) {
+                    currentLangEl.textContent = currentLangText;
+                }
+
+                // 更新下拉菜单选中状态
+                document.querySelectorAll('[data-lang]').forEach(el => {
+                    el.classList.remove('active');
+                    if (el.getAttribute('data-lang') === this.currentLang) {
+                        el.classList.add('active');
+                    }
+                });
+
+                // 触发翻译完成事件
+                document.dispatchEvent(new CustomEvent('i18n:updated', { detail: { lang: this.currentLang } }));
+            },
+
+            // 设置语言
+            async setLanguage(lang) {
+                if (!this.supportedLangs.includes(lang)) return;
+                if (lang === this.currentLang) return;
+
+                this.currentLang = lang;
+                this.setCookie('epd_language', lang);
+                await this.loadTranslations(lang);
+                this.applyTranslations();
+            }
+        };
+
+        // 全局语言设置函数
+        async function setLanguage(lang) {
+            await I18N.setLanguage(lang);
+        }
+
+        // 全局翻译函数
+        function t(key, vars = {}, fallback = '') {
+            return I18N.t(key, vars, fallback);
+        }
+
+        // 初始化 i18n
+        async function initI18n() {
+            I18N.initLanguage();
+            await I18N.loadTranslations(I18N.currentLang);
+            I18N.applyTranslations();
+        }
+
         // 全局变量
         let images = [];
         let uploads = [];
 
         // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 初始化国际化
+            await initI18n();
+
             initializeUploadArea();
 
             // 初始加载所有数据
@@ -584,7 +739,7 @@
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="5" class="text-center text-muted">
-                            <i class="bi bi-cloud-upload"></i> 暂无待转换文件
+                            <i class="bi bi-cloud-upload"></i> <span data-i18n="upload.noPendingFiles">暂无待转换文件</span>
                         </td>
                     </tr>
                 `;
@@ -605,14 +760,17 @@
                     <td>${file.modified}</td>
                     <td>
                         <button class="btn btn-success btn-sm me-1" onclick="convertFile('${file.name}')">
-                            <i class="bi bi-arrow-right"></i> 转换
+                            <i class="bi bi-arrow-right"></i> <span data-i18n="fileList.actions.convert">转换</span>
                         </button>
                         <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.name}')">
-                            <i class="bi bi-trash"></i> 删除
+                            <i class="bi bi-trash"></i> <span data-i18n="fileList.actions.delete">删除</span>
                         </button>
                     </td>
                 </tr>
             `).join('');
+
+            // 应用翻译到动态生成的内容
+            I18N.applyTranslations();
         }
 
         // 渲染原始图片预览
@@ -626,7 +784,7 @@
                 container.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-file-earmark-image" style="font-size: 48px;"></i>
-                        <p class="mt-2">暂无原始图片</p>
+                        <p class="mt-2" data-i18n="upload.noOriginalFiles">暂无原始图片</p>
                     </div>
                 `;
                 return;
@@ -648,8 +806,8 @@
 
                 // 根据转换状态显示不同的badge
                 const badge = hasBMP
-                    ? '<span class="badge bg-success">已转换</span>'
-                    : '<span class="badge bg-warning">待转换</span>';
+                    ? '<span class="badge bg-success" data-i18n="fileList.status.converted">已转换</span>'
+                    : '<span class="badge bg-warning" data-i18n="fileList.status.pending">待转换</span>';
 
                 return `
                     <div class="image-card">
@@ -672,6 +830,9 @@
                     </div>
                 `;
             }).join('');
+
+            // 应用翻译到动态生成的内容
+            I18N.applyTranslations();
         }
 
         // 预览图片
@@ -692,7 +853,7 @@
                 container.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-image" style="font-size: 48px;"></i>
-                        <p class="mt-2">暂无BMP图片</p>
+                        <p class="mt-2" data-i18n="upload.noBmpFiles">暂无BMP图片</p>
                     </div>
                 `;
                 return;
@@ -718,6 +879,9 @@
                     </div>
                 </div>
             `).join('');
+
+            // 应用翻译到动态生成的内容
+            I18N.applyTranslations();
         }
 
         // 转换文件（支持进度显示）
@@ -734,7 +898,7 @@
                 progressBar.style.width = '0%';
                 progressBar.setAttribute('aria-valuenow', '0');
                 progressPercent.textContent = '0%';
-                progressMessage.textContent = '准备转换...';
+                progressMessage.textContent = t('progress.preparing');
 
                 progressModal.show();
 
@@ -807,7 +971,7 @@
 
         // 删除文件（删除待转换文件）
         async function deleteFile(filename) {
-            if (!confirm(`确定要删除 ${filename} 吗？`)) return;
+            if (!confirm(t('messages.confirmDeleteFile', {filename}))) return;
 
             try {
                 const response = await fetch('/api/delete', {
@@ -836,13 +1000,13 @@
 
         // 刷新数据
         async function refreshData() {
-            showToast('info', '正在刷新...');
+            showToast('info', t('messages.refreshing'));
             await loadImages();
             await loadUploads();
             await loadOriginals();  // 刷新原始图片预览
             await loadOriginalList();  // 刷新原始图片列表
             await loadBMPFiles();  // 刷新BMP图片列表
-            showToast('success', '刷新完成');
+            showToast('success', t('messages.refreshComplete'));
         }
 
         // ============= 批量操作函数 =============
@@ -897,14 +1061,14 @@
             const fileCheckboxes = document.querySelectorAll('.file-checkbox:checked');
 
             if (fileCheckboxes.length === 0) {
-                showToast('warning', '请选择要转换的文件');
+                showToast('warning', t('messages.selectFilesToConvert'));
                 return;
             }
 
             const filenames = Array.from(fileCheckboxes).map(cb => cb.value);
 
             try {
-                showToast('info', `开始批量转换 ${filenames.length} 个文件...`);
+                showToast('info', t('messages.batchConvertStart', {count: filenames.length}));
 
                 const response = await fetch('/api/batch_convert', {
                     method: 'POST',
@@ -941,18 +1105,18 @@
             const fileCheckboxes = document.querySelectorAll('.file-checkbox:checked');
 
             if (fileCheckboxes.length === 0) {
-                showToast('warning', '请选择要删除的文件');
+                showToast('warning', t('messages.selectFilesToDelete'));
                 return;
             }
 
             const filenames = Array.from(fileCheckboxes).map(cb => cb.value);
 
-            if (!confirm(`确定要删除选中的 ${filenames.length} 个文件吗？`)) {
+            if (!confirm(t('messages.confirmDeleteSelected', {count: filenames.length}))) {
                 return;
             }
 
             try {
-                showToast('info', `开始批量删除 ${filenames.length} 个文件...`);
+                showToast('info', t('messages.batchDeleteStart', {count: filenames.length}));
 
                 const response = await fetch('/api/batch_delete', {
                     method: 'POST',
@@ -1015,7 +1179,7 @@
                     <div class="toast-header">
                         <i class="bi bi-${type === 'success' ? 'check-circle-fill' : type === 'danger' ? 'exclamation-triangle-fill' : 'info-circle-fill'}
                            text-${type === 'success' ? 'success' : type === 'danger' ? 'danger' : 'primary'} me-2"></i>
-                        <strong class="me-auto">${type === 'success' ? '成功' : type === 'danger' ? '错误' : '提示'}</strong>
+                        <strong class="me-auto">${type === 'success' ? t('messages.success') : type === 'danger' ? t('messages.error') : t('messages.info')}</strong>
                         <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                     </div>
                     <div class="toast-body">
@@ -1076,7 +1240,7 @@
                 container.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-file-earmark-image" style="font-size: 32px;"></i>
-                        <p class="mt-2">暂无原始图片</p>
+                        <p class="mt-2" data-i18n="upload.noOriginalFiles">暂无原始图片</p>
                     </div>
                 `;
                 return;
@@ -1088,7 +1252,7 @@
             container.innerHTML = files.map(file => {
                 // 判断文件是否已转换（通过待转换列表判断）
                 const isConverted = !uploadFilenames.includes(file.name);
-                const badge = isConverted ? '<span class="badge bg-success">已转换</span>' : '<span class="badge bg-warning">待转换</span>';
+                const badge = isConverted ? '<span class="badge bg-success" data-i18n="fileList.status.converted">已转换</span>' : '<span class="badge bg-warning" data-i18n="fileList.status.pending">待转换</span>';
 
                 return `
                     <div class="file-item">
@@ -1108,15 +1272,18 @@
                         </div>
                         <div class="file-actions">
                             <button class="btn btn-info btn-sm me-1" onclick="previewImage('/uploads/${file.name}', '${file.name}')">
-                                <i class="bi bi-eye"></i> 预览
+                                <i class="bi bi-eye"></i> <span data-i18n="fileList.actions.preview">预览</span>
                             </button>
                             <button class="btn btn-danger btn-sm" onclick="deleteUploadFile('${file.name}')">
-                                <i class="bi bi-trash"></i> 删除
+                                <i class="bi bi-trash"></i> <span data-i18n="fileList.actions.delete">删除</span>
                             </button>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // 应用翻译到动态生成的内容
+            I18N.applyTranslations();
         }
 
         // 渲染原始文件列表
@@ -1131,7 +1298,7 @@
                 container.innerHTML = `
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-image" style="font-size: 32px;"></i>
-                        <p class="mt-2">暂无BMP图片</p>
+                        <p class="mt-2" data-i18n="upload.noBmpFiles">暂无BMP图片</p>
                     </div>
                 `;
                 return;
@@ -1155,14 +1322,17 @@
                     </div>
                     <div class="file-actions">
                         <button class="btn btn-info btn-sm me-1" onclick="previewImage('/images/${file.name}', '${file.name}')">
-                            <i class="bi bi-eye"></i> 预览
+                            <i class="bi bi-eye"></i> <span data-i18n="fileList.actions.preview">预览</span>
                         </button>
                         <button class="btn btn-danger btn-sm" onclick="deleteBMPFile('${file.name}')">
-                            <i class="bi bi-trash"></i> 删除
+                            <i class="bi bi-trash"></i> <span data-i18n="fileList.actions.delete">删除</span>
                         </button>
                     </div>
                 </div>
             `).join('');
+
+            // 应用翻译到动态生成的内容
+            I18N.applyTranslations();
         }
 
         // 删除BMP文件
@@ -1170,16 +1340,16 @@
             console.log('deleteBMPFile called with:', filename);
 
             // 显示确认对话框
-            const confirmed = confirm(`确定要删除BMP文件 ${filename} 吗？`);
+            const confirmed = confirm(t('messages.confirmDeleteBMP', {filename}));
             console.log('User confirmed:', confirmed);
 
             if (!confirmed) {
                 console.log('User cancelled deletion');
-                showToast('info', '已取消删除操作');
+                showToast('info', t('messages.deleteCancelled'));
                 return;
             }
 
-            showToast('info', '正在删除文件...');
+            showToast('info', t('messages.deletingFile'));
 
             try {
                 console.log('Sending DELETE request to /api/delete-bmp');
@@ -1226,11 +1396,11 @@
 
         // 删除uploads中的文件
         async function deleteUploadFile(filename) {
-            if (!confirm(`确定要删除原始文件 ${filename} 吗？`)) {
+            if (!confirm(t('messages.confirmDeleteOriginal', {filename}))) {
                 return;
             }
 
-            showToast('info', '正在删除文件...');
+            showToast('info', t('messages.deletingFile'));
 
             try {
                 const response = await fetch('/api/delete', {

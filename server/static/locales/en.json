@@ -1,0 +1,87 @@
+{
+  "title": "EPD e-Paper - Image Management System",
+  "navbar": {
+    "brand": "EPD e-Paper - Image Management",
+    "refresh": "Refresh",
+    "api": "API",
+    "language": "Language"
+  },
+  "upload": {
+    "title": "Upload Images",
+    "dragHint": "Drag images here or click to upload",
+    "selectFiles": "Select Files",
+    "noOriginalFiles": "No original images",
+    "noBmpFiles": "No BMP images",
+    "bmpPreview": "BMP Image Preview",
+    "bmpPreviewFull": "BMP Image Preview",
+    "originalPreview": "Original Image Preview",
+    "pendingFiles": "Pending Files",
+    "originalList": "Original Image List",
+    "bmpList": "BMP Image List",
+    "noPendingFiles": "No pending files",
+    "supportedFormats": "Supports JPG, PNG, GIF, BMP formats, max 16MB"
+  },
+  "fileList": {
+    "title": "File List",
+    "selectAll": "Select All",
+    "batchConvert": "Batch Convert",
+    "batchDelete": "Batch Delete",
+    "selectedCount": "Selected",
+    "columns": {
+      "select": "Select",
+      "filename": "Filename",
+      "size": "Size",
+      "modified": "Modified",
+      "action": "Action"
+    },
+    "actions": {
+      "convert": "Convert",
+      "delete": "Delete",
+      "preview": "Preview"
+    },
+    "status": {
+      "converted": "Converted",
+      "pending": "Pending"
+    }
+  },
+  "progress": {
+    "title": "Conversion Progress",
+    "percent": "Progress",
+    "preparing": "Preparing...",
+    "converting": "Converting...",
+    "completed": "Completed",
+    "error": "Error"
+  },
+  "messages": {
+    "confirmDelete": "Are you sure you want to delete?",
+    "confirmDeleteFile": "Are you sure you want to delete {filename}?",
+    "confirmDeleteSelected": "Are you sure you want to delete {count} selected files?",
+    "confirmDeleteBMP": "Are you sure you want to delete BMP file {filename}?",
+    "confirmDeleteOriginal": "Are you sure you want to delete original file {filename}?",
+    "deleteSuccess": "Deleted successfully",
+    "deleteCancelled": "Deletion cancelled",
+    "convertSuccess": "Converted successfully",
+    "convertFailed": "Conversion failed",
+    "uploadSuccess": "Upload successful",
+    "uploadError": "Upload failed",
+    "deleteError": "Delete failed",
+    "networkError": "Network error",
+    "loading": "Loading...",
+    "refreshing": "Refreshing...",
+    "refreshComplete": "Refresh complete",
+    "selectFilesToConvert": "Please select files to convert",
+    "batchConvertStart": "Starting batch conversion of {count} files...",
+    "batchDeleteStart": "Starting batch deletion of {count} files...",
+    "selectFilesToDelete": "Please select files to delete",
+    "deletingFile": "Deleting file...",
+    "converting": "Converting...",
+    "success": "Success",
+    "error": "Error",
+    "info": "Info"
+  },
+  "languages": {
+    "zh-CN": "中文(简体)",
+    "zh-TW": "中文(繁體)",
+    "en": "English"
+  }
+}
